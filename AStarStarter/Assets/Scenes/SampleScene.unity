@@ -570,7 +570,7 @@ MonoBehaviour:
   TerrainMaterial: {fileID: 2100000, guid: f8dc8e519e060eb45b6c4e1dd9daff43, type: 2}
   characterManager: {fileID: 1961374467}
   ObstacleMaterial: {fileID: 2100000, guid: 383b07f074f69c7468984510ec88365d, type: 2}
-  NumberOfObstacles: 200
+  NumberOfObstacles: 10
   Obstacles: []
 --- !u!4 &1322844985
 Transform:

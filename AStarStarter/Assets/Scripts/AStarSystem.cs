@@ -47,7 +47,7 @@ public class AStarSystem : IDisposable
                     PathMovementInfo pathMove = pathMovement[characterID];
                     
                     // path list to add to
-                   var path = CharacterPaths[characterID];
+                    var path = CharacterPaths[characterID];
                     path.Clear();
                     mScratchMap.Clear();
                     mPriorityQueue.Clear();
@@ -111,21 +111,43 @@ public class AStarSystem : IDisposable
                             else
                             {
                                 // add the neighbors if they haven't been visited before
-                                // NOTE: not moving in diagonals here
                                 // left
                                 AddToQueueIfNeeded(new Vector3(x - 1, y, z), mBoardWidth, ref mPriorityQueue, ref mScratchMap,
                                     pathFindingData, new Vector3 { x = x, y = y, z = z }, new Vector3 { x = pos.x, y = pos.y, z = pos.z },
                                     mapData);
+
                                 // right
                                 AddToQueueIfNeeded(new Vector3(x + 1, y, z), mBoardWidth, ref mPriorityQueue, ref mScratchMap,
                                     pathFindingData, new Vector3 { x = x, y = y, z = z }, new Vector3 { x = pos.x, y = pos.y, z = pos.z },
                                     mapData);
+
                                 // down
                                 AddToQueueIfNeeded(new Vector3(x, y, z - 1), mBoardWidth, ref mPriorityQueue, ref mScratchMap,
                                     pathFindingData, new Vector3 { x = x, y = y, z = z }, new Vector3 { x = pos.x, y = pos.y, z = pos.z },
                                     mapData);
+
                                 // up
                                 AddToQueueIfNeeded(new Vector3(x, y, z + 1), mBoardWidth, ref mPriorityQueue, ref mScratchMap,
+                                    pathFindingData, new Vector3 { x = x, y = y, z = z }, new Vector3 { x = pos.x, y = pos.y, z = pos.z },
+                                    mapData);
+
+                                // up-right
+                                AddToQueueIfNeeded(new Vector3(x + 1, y, z + 1), mBoardWidth, ref mPriorityQueue, ref mScratchMap,
+                                    pathFindingData, new Vector3 { x = x, y = y, z = z }, new Vector3 { x = pos.x, y = pos.y, z = pos.z },
+                                    mapData);
+
+                                // up-left
+                                AddToQueueIfNeeded(new Vector3(x + 1, y, z - 1), mBoardWidth, ref mPriorityQueue, ref mScratchMap,
+                                    pathFindingData, new Vector3 { x = x, y = y, z = z }, new Vector3 { x = pos.x, y = pos.y, z = pos.z },
+                                    mapData);
+
+                                // down-right
+                                AddToQueueIfNeeded(new Vector3(x - 1, y, z + 1), mBoardWidth, ref mPriorityQueue, ref mScratchMap,
+                                    pathFindingData, new Vector3 { x = x, y = y, z = z }, new Vector3 { x = pos.x, y = pos.y, z = pos.z },
+                                    mapData);
+
+                                // down-left
+                                AddToQueueIfNeeded(new Vector3(x - 1, y, z - 1), mBoardWidth, ref mPriorityQueue, ref mScratchMap,
                                     pathFindingData, new Vector3 { x = x, y = y, z = z }, new Vector3 { x = pos.x, y = pos.y, z = pos.z },
                                     mapData);
                             }
@@ -220,7 +242,7 @@ public class AStarSystem : IDisposable
                     data.comeFrom = comeFrom;
                     pathfindingData.TryAdd(x * boardWidth + z, data);
                     // heuristic cost:
-                    hvalue = manhattanDistance(goal, pos);
+                    hvalue = euclideanDistance(goal, pos);
                     priority = newCost + hvalue;
                     priorityQueue.Enqueue(pos, priority);
                     Debug.DrawLine(new Vector3(x - 0.5f, 1, z - 0.5f),
@@ -235,5 +257,12 @@ public class AStarSystem : IDisposable
     public int manhattanDistance(Vector3 goal, Vector3 current)
     {
         return (int)(Mathf.Abs(current.x - goal.x) + Mathf.Abs(current.z - goal.z));
+    }
+
+    public int euclideanDistance(Vector3 goal, Vector3 current)
+    {
+        float dx = Mathf.Abs(current.x - goal.x);
+        float dy = Mathf.Abs(current.y - goal.y);
+        return (int)Mathf.Sqrt(dx * dx + dy * dy);
     }
 }

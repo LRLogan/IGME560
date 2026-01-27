@@ -228,19 +228,41 @@ public class SimCharManager : MonoBehaviour
             }
         }
     }
-    
-    
+
+    /// <summary>
+    /// Gets the desired acceleration for a target start and end pos
+    /// </summary>
+    /// <param name="data"></param>
+    /// <param name="target"></param>
+    /// <returns></returns>
+    private Vector3 GetSeekAcc(ref VehicleData data, Vector3 target)
+    {
+        Vector3 desired_velocity = Vector3.Normalize((target - data.pos) * data.max_speed);
+        Vector3 steering = desired_velocity - data.velocity;
+        steering = truncateLength(steering, data.max_force);
+        return steering / data.mass;
+    }
+
+
     // Arrive algorithm from a combination of Craig Reynold's Steering paper and 
     // https://code.tutsplus.com/understanding-steering-behaviors-flee-and-arrival--gamedev-1303t
     public void Arrive(ref VehicleData data, Vector3 target)
     {
-       
+        Vector3 desired = target - data.pos;
+        float mag = desired.magnitude;
+
+        desired = Vector3.Normalize(target - data.pos) * data.max_speed * (mag / 2);
+        Vector3 steering = desired - data.velocity;
+
+        data.velocity = truncateLength(data.velocity + steering, data.max_speed);
+        data.pos = data.pos + data.velocity;
     }
     
     // Seek algorithm is from Craig Reynold's Steering paper
     public void Seek(ref VehicleData data, Vector3 target)
     {
-       
+        data.velocity = truncateLength(data.velocity + GetSeekAcc(ref data, target), data.max_speed);
+        data.pos = data.pos + data.velocity;
     }
 
     
