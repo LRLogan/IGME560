@@ -10,11 +10,14 @@ public class GameManager : MonoBehaviour
     public int RandomSeed;
     public byte Width;
     public byte Depth;
-    public int CharactersToSpawn;
+    public int CharactersToSpawn = 2;
+    public int ItemsToSpawn = 5;
     public Material TerrainMaterial;
     public SimCharManager characterManager;
     public Material ObstacleMaterial;
-    public int NumberOfObstacles = 10;
+    public int NumberOfObstacles = 20;
+    public GameObject itemPrefab;
+    public GameObject hivePrefab;
     
     // internally created vars
     private MapData[] mMap;
@@ -23,6 +26,11 @@ public class GameManager : MonoBehaviour
     private GameObject mTerrainObject;
     private bool mIsInitialized;
     public List<GameObject> Obstacles = new List<GameObject>(10);
+    public List<GameObject> Items = new List<GameObject>(10);
+
+    // Upgrade to simulation vars
+    private GameObject hive;
+
     
     // Set up the map and obstacles for the AStar example.
     void Start()
@@ -32,6 +40,15 @@ public class GameManager : MonoBehaviour
         mMap = new MapData[(Width+1) * (Depth + 1)];
         CreateMap();
         AddObstacles(NumberOfObstacles);
+
+        // Adding the items and hive
+        for (int i = 0; i < ItemsToSpawn; i++)
+        {
+            Items.Add(AddItem(itemPrefab));
+        }
+        hive = AddItem(hivePrefab);
+
+        characterManager.Items = Items;
         characterManager.SpawnRandomCharacters(CharactersToSpawn, 0, Width,
             0, Depth, mMap);
     }
@@ -74,6 +91,49 @@ public class GameManager : MonoBehaviour
             Obstacles.Add(tmp);
             mMap[(int)tmp.transform.position.x * Width + (int)tmp.transform.position.z].type = Tiles.NOT_WALKABLE;
         }
+    }
+
+    /// <summary>
+    /// A more generic form of AddObsticle but with option for a prefab.
+    /// Also similar to SpawnRandomCharacters
+    /// </summary>
+    /// <param name="prefabObj"></param>
+    public GameObject AddItem(GameObject prefabObj)
+    {
+        bool done = false;
+        // hardcode the number of times to try 
+        // initializing the location for a spawn
+        // so we're not stuck in infinity if somebody
+        // fills the board up with items
+        int tryInitializing = 100;
+        byte x = (byte)Random.Range(0, Width);
+        byte z = (byte)Random.Range(0, Depth);
+        while (!done && tryInitializing > 0)
+        {
+            if (mMap[x * Width + z].type == Tiles.NOT_WALKABLE)
+            {
+                // try again!
+                x = (byte)Random.Range(0, Width);
+                z = (byte)Random.Range(0, Depth);
+            }
+            else
+            {
+                done = true;
+            }
+            tryInitializing--;
+            if (tryInitializing == 0)
+            {
+                Debug.Log("Spawning item " + " has failed. Stopping program.");
+                return null;
+            }
+        }
+
+        GameObject newObj = GameObject.Instantiate(prefabObj);
+        float y = mMap[x * (Width + 1) + z].height;
+        newObj.transform.position = new Vector3(x, y + 0.5f, z);
+        newObj.SetActive(true);
+        Debug.Log("Item of type " + prefabObj + " spawned");
+        return newObj;
     }
     
     // Generate flat terrain that could carry a reasonable texture 

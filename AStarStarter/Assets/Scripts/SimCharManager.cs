@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
+using System.Linq;
 using Random = UnityEngine.Random;
 
 public class SimCharManager : MonoBehaviour
@@ -26,6 +27,8 @@ public class SimCharManager : MonoBehaviour
     byte mMinDepth, mMaxDepth;
     AStarSystem mAStarSystem;
 
+    public List<GameObject> Items = new List<GameObject>(10);
+
     // When characters are finished spawning the update
     // functionality runs.
     void Update()
@@ -42,6 +45,7 @@ public class SimCharManager : MonoBehaviour
                 switch (CharacterTasks[i])
                 {
                     case Task.SetTarget:
+                        /* OLD Set target system
                         //Debug.Log("setting target for character: " + i);
                         //set target
                         bool targetSet = false;
@@ -71,6 +75,38 @@ public class SimCharManager : MonoBehaviour
                         Vector3 currentPos = CharacterTransforms[i].position;
                         mAStarSystem.queueForPathing.Enqueue(
                             new CharacterPathData { characterID = i, target = Targets[i], pos= currentPos});
+                        */
+
+                        // NEW Set target system
+                        Transform playerTransform = CharacterTransforms[i];
+                        List<GameObject> sortedList = Items
+
+                            // Filtering out targeted objects
+                            .Where(obj => !obj.GetComponent<ForageItem>().isTargeted)
+
+                            // Sorting by distance
+                            .OrderBy(obj => Vector3.Distance(playerTransform.position, obj.transform.position))
+                            .ToList();
+
+                        GameObject clocest = sortedList[0];
+                        Vector3 clocestPos = clocest.gameObject.GetComponent<Transform>().position;
+
+                        Targets[i] = new Vector3(
+                            clocestPos.x,
+                            MapData[(int)clocestPos.x * (mMaxWidth + 1) + (int)clocestPos.z].height,
+                            clocestPos.z);
+
+                        // change new task to be pathfinding
+                        CharacterTasks[i] = Task.Pathfinding;
+
+                        // add the pathing to the aStar queue
+                        //Vector3 currentPos = Characters[i].gameObject.GetComponent<Transform>().position;
+                        Vector3 currentPos = new Vector3(playerTransform.position.x,
+                            playerTransform.position.y,
+                            playerTransform.position.z);
+                        mAStarSystem.queueForPathing.Enqueue(
+                            new CharacterPathData { characterID = i, target = Targets[i], pos = currentPos });
+
                         break;
                     case Task.Pathfinding:
                         // astar will look for this task and handle it
