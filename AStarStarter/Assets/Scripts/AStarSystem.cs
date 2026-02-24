@@ -63,7 +63,7 @@ public class AStarSystem : IDisposable
                         if(characterTasks[characterID] == Task.Pathfinding)
                         {
                             // Reached an item so return to hive
-                            characterTasks[characterID] = Task.Return;
+                            characterTasks[characterID] = Task.Refresh;
                         }
                         else
                         {

@@ -7,5 +7,6 @@ public enum Task
     Move,
     SetTarget,
     Idle,
-    Return
+    Return,
+    Refresh
 }

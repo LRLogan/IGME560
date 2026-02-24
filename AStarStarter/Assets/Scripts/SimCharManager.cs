@@ -113,10 +113,6 @@ public class SimCharManager : MonoBehaviour
 
                     case Task.Pathfinding:
                         // astar will look for this task and handle it
-
-                        // refresh target
-                        Characters[i].GetComponent<Agent>().target.Reset(gameMan.GetRandLoc());
-                        Characters[i].GetComponent<Agent>().target = null;
                         break;
 
                     case Task.Move:
@@ -133,6 +129,15 @@ public class SimCharManager : MonoBehaviour
 
                         mAStarSystem.queueForPathing.Enqueue(
                             new CharacterPathData { characterID = i, target = Targets[i], pos = GetCurPos(CharacterTransforms[i]) });
+                        break;
+
+                    case Task.Refresh:
+                        // refresh target
+                        Debug.Log("Refreshing target");
+                        Characters[i].GetComponent<Agent>().target.Reset(gameMan.GetRandLoc());
+                        Characters[i].GetComponent<Agent>().target = null;
+
+                        CharacterTasks[i] = Task.Return;
                         break;
 
                     default:
