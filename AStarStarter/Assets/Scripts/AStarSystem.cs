@@ -57,6 +57,7 @@ public class AStarSystem : IDisposable
                     {
                         pathMove.length = 0;
                         pathMove.currentIndex = 0;
+
                         // we're at the target, so find another one
                         characterTasks[characterID] = Task.SetTarget;
                     }

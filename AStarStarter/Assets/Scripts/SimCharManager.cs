@@ -12,6 +12,7 @@ public class SimCharManager : MonoBehaviour
     public float Tolerance = 0.1f;
     public float SlowingRadius = 0.5f;
     public GameObject CharacterModel;
+    public GameManager gameMan;
     
     // internal member instance information
     List<Task> CharacterTasks= new List<Task>(10);
@@ -96,6 +97,8 @@ public class SimCharManager : MonoBehaviour
                             MapData[(int)clocestPos.x * (mMaxWidth + 1) + (int)clocestPos.z].height,
                             clocestPos.z);
 
+                        Characters[i].GetComponent<Agent>().target = clocest.GetComponent<ForageItem>();
+
                         // change new task to be pathfinding
                         CharacterTasks[i] = Task.Pathfinding;
 
@@ -104,12 +107,16 @@ public class SimCharManager : MonoBehaviour
                         Vector3 currentPos = new Vector3(playerTransform.position.x,
                             playerTransform.position.y,
                             playerTransform.position.z);
+
                         mAStarSystem.queueForPathing.Enqueue(
                             new CharacterPathData { characterID = i, target = Targets[i], pos = currentPos });
 
                         break;
                     case Task.Pathfinding:
                         // astar will look for this task and handle it
+
+                        // refresh target
+                        Characters[i].GetComponent<Agent>().target.Reset(gameMan.GetRandLoc());
                         break;
                     case Task.Move:
                         // movement system is called in fixedupdate

@@ -48,6 +48,7 @@ public class GameManager : MonoBehaviour
         }
         hive = AddItem(hivePrefab);
 
+        characterManager.gameMan = this;
         characterManager.Items = Items;
         characterManager.SpawnRandomCharacters(CharactersToSpawn, 0, Width,
             0, Depth, mMap);
@@ -100,6 +101,17 @@ public class GameManager : MonoBehaviour
     /// <param name="prefabObj"></param>
     public GameObject AddItem(GameObject prefabObj)
     {
+        Vector3 randLoc = GetRandLoc();
+
+        GameObject newObj = GameObject.Instantiate(prefabObj);
+        newObj.transform.position = new Vector3(randLoc.x, randLoc.y + 0.5f, randLoc.z);
+        newObj.SetActive(true);
+        Debug.Log("Item of type " + prefabObj + " spawned");
+        return newObj;
+    }
+
+    public Vector3 GetRandLoc()
+    {
         bool done = false;
         // hardcode the number of times to try 
         // initializing the location for a spawn
@@ -108,6 +120,7 @@ public class GameManager : MonoBehaviour
         int tryInitializing = 100;
         byte x = (byte)Random.Range(0, Width);
         byte z = (byte)Random.Range(0, Depth);
+        float y = mMap[x * (Width + 1) + z].height;
         while (!done && tryInitializing > 0)
         {
             if (mMap[x * Width + z].type == Tiles.NOT_WALKABLE)
@@ -124,16 +137,10 @@ public class GameManager : MonoBehaviour
             if (tryInitializing == 0)
             {
                 Debug.Log("Spawning item " + " has failed. Stopping program.");
-                return null;
+                return Vector3.zero;
             }
         }
-
-        GameObject newObj = GameObject.Instantiate(prefabObj);
-        float y = mMap[x * (Width + 1) + z].height;
-        newObj.transform.position = new Vector3(x, y + 0.5f, z);
-        newObj.SetActive(true);
-        Debug.Log("Item of type " + prefabObj + " spawned");
-        return newObj;
+        return new Vector3(x, y, z);
     }
     
     // Generate flat terrain that could carry a reasonable texture 
