@@ -47,38 +47,6 @@ public class SimCharManager : MonoBehaviour
                 switch (CharacterTasks[i])
                 {
                     case Task.SetTarget:
-                        /* OLD Set target system
-                        //Debug.Log("setting target for character: " + i);
-                        //set target
-                        bool targetSet = false;
-                        int tryingToSetCount = 0;
-                        while (!targetSet && tryingToSetCount < 20)
-                        {
-                            byte x = (byte) Random.Range(mMinWidth, mMaxWidth);
-                            byte z = (byte) Random.Range(mMinDepth, mMaxDepth);
-                            float y = MapData[x * (mMaxWidth + 1) + z].height;
-                            Targets[i] = new Vector3(x, y, z);
-                            if (MapData[x * mMaxWidth + z].type != Tiles.NOT_WALKABLE)
-                            {
-                                targetSet = true;
-                                Debug.DrawLine(new Vector3(x-0.5f, 1, z-0.5f), 
-                                    new Vector3(x+0.5f, 1, z+0.5f), Color.red, 10, false);
-                                //Debug.Log("target is: " + Targets[i]);
-                            }
-                            tryingToSetCount++;
-                        }
-
-                       
-                        // change new task to be pathfinding
-                        CharacterTasks[i] = Task.Pathfinding;
-                        
-                        // add the pathing to the aStar queue
-                        //Vector3 currentPos = Characters[i].gameObject.GetComponent<Transform>().position;
-                        Vector3 currentPos = CharacterTransforms[i].position;
-                        mAStarSystem.queueForPathing.Enqueue(
-                            new CharacterPathData { characterID = i, target = Targets[i], pos= currentPos});
-                        */
-
                         // NEW Set target system
                         Transform playerTransform = CharacterTransforms[i];
                         List<GameObject> sortedList = Items
@@ -91,6 +59,8 @@ public class SimCharManager : MonoBehaviour
                             .ToList();
 
                         GameObject clocest = sortedList[0];
+                        clocest.GetComponent<ForageItem>().isTargeted = true;
+
                         Vector3 clocestPos = clocest.gameObject.GetComponent<Transform>().position;
 
                         Targets[i] = new Vector3(
@@ -108,7 +78,6 @@ public class SimCharManager : MonoBehaviour
 
                         mAStarSystem.queueForPathing.Enqueue(
                             new CharacterPathData { characterID = i, target = Targets[i], pos = GetCurPos(playerTransform) });
-
                         break;
 
                     case Task.Pathfinding:
@@ -124,11 +93,19 @@ public class SimCharManager : MonoBehaviour
                         break;
 
                     case Task.Return:
-                        // Return (set target) to the hive
+
                         Targets[i] = hiveLoc;
 
+                        CharacterTasks[i] = Task.Pathfinding;
+
                         mAStarSystem.queueForPathing.Enqueue(
-                            new CharacterPathData { characterID = i, target = Targets[i], pos = GetCurPos(CharacterTransforms[i]) });
+                            new CharacterPathData
+                            {
+                                characterID = i,
+                                target = Targets[i],
+                                pos = GetCurPos(CharacterTransforms[i])
+                            });
+
                         break;
 
                     case Task.Refresh:
@@ -285,12 +262,25 @@ public class SimCharManager : MonoBehaviour
                 {
                     pathMovement.currentIndex = pathMovement.currentIndex + 1;
                     CharacterPathMovementInfo[characterID] = pathMovement;
-                } else
+                }
+                else
                 {
-                    CharacterTasks[characterID] = Task.SetTarget;
+                    Agent agent = Characters[characterID].GetComponent<Agent>();
+
+                    if (agent.target != null)
+                    {
+                        // We reached a forage item, now collect and return to hive
+                        CharacterTasks[characterID] = Task.Refresh;
+                    }
+                    else
+                    {
+                        // We reached the hive, now find a new item
+                        CharacterTasks[characterID] = Task.SetTarget;
+                    }
+
                     CharacterVelocities[characterID] = Vector3.zero;
                 }
-                
+
             }
         }
     }
