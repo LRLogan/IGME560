@@ -6,5 +6,6 @@ public enum Task
     Pathfinding,
     Move,
     SetTarget,
-    Idle
+    Idle,
+    Return
 }

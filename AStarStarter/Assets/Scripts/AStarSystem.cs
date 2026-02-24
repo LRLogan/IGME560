@@ -39,7 +39,8 @@ public class AStarSystem : IDisposable
             {
                 CharacterPathData charData = queueForPathing.Dequeue();
                 int characterID = charData.characterID;
-                if (characterTasks[characterID] == Task.Pathfinding)
+                if (characterTasks[characterID] == Task.Pathfinding ||
+                    characterTasks[characterID] == Task.Return)
                 {
                     //Debug.Log("starting pathfinding for character: " + characterID);
                     Vector3 target = charData.target;
@@ -58,8 +59,17 @@ public class AStarSystem : IDisposable
                         pathMove.length = 0;
                         pathMove.currentIndex = 0;
 
-                        // we're at the target, so find another one
-                        characterTasks[characterID] = Task.SetTarget;
+                        // reached target
+                        if(characterTasks[characterID] == Task.Pathfinding)
+                        {
+                            // Reached an item so return to hive
+                            characterTasks[characterID] = Task.Return;
+                        }
+                        else
+                        {
+                            // Reached the hive so find a new item target
+                            characterTasks[characterID] = Task.SetTarget;
+                        }
                     }
                     else
                     {

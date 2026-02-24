@@ -29,6 +29,7 @@ public class SimCharManager : MonoBehaviour
     AStarSystem mAStarSystem;
 
     public List<GameObject> Items = new List<GameObject>(10);
+    public Vector3 hiveLoc;
 
     // When characters are finished spawning the update
     // functionality runs.
@@ -104,26 +105,36 @@ public class SimCharManager : MonoBehaviour
 
                         // add the pathing to the aStar queue
                         //Vector3 currentPos = Characters[i].gameObject.GetComponent<Transform>().position;
-                        Vector3 currentPos = new Vector3(playerTransform.position.x,
-                            playerTransform.position.y,
-                            playerTransform.position.z);
 
                         mAStarSystem.queueForPathing.Enqueue(
-                            new CharacterPathData { characterID = i, target = Targets[i], pos = currentPos });
+                            new CharacterPathData { characterID = i, target = Targets[i], pos = GetCurPos(playerTransform) });
 
                         break;
+
                     case Task.Pathfinding:
                         // astar will look for this task and handle it
 
                         // refresh target
                         Characters[i].GetComponent<Agent>().target.Reset(gameMan.GetRandLoc());
+                        Characters[i].GetComponent<Agent>().target = null;
                         break;
+
                     case Task.Move:
                         // movement system is called in fixedupdate
                         break;
+
                     case Task.Idle:
                         // do nothing
                         break;
+
+                    case Task.Return:
+                        // Return (set target) to the hive
+                        Targets[i] = hiveLoc;
+
+                        mAStarSystem.queueForPathing.Enqueue(
+                            new CharacterPathData { characterID = i, target = Targets[i], pos = GetCurPos(CharacterTransforms[i]) });
+                        break;
+
                     default:
                         break;
                 }
@@ -132,6 +143,13 @@ public class SimCharManager : MonoBehaviour
             // run AStar on anything that needs it
             mAStarSystem.runAStar(CharacterTasks, CharacterPathMovementInfo, MapData, CharacterPaths);
         }
+    }
+
+    public Vector3 GetCurPos(Transform playerTransform)
+    {
+        return new Vector3(playerTransform.position.x,
+                            playerTransform.position.y,
+                            playerTransform.position.z);
     }
 
     // Assumes: map and all char arrays already exist

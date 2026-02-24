@@ -49,6 +49,7 @@ public class GameManager : MonoBehaviour
         hive = AddItem(hivePrefab);
 
         characterManager.gameMan = this;
+        characterManager.hiveLoc = hive.transform.position;
         characterManager.Items = Items;
         characterManager.SpawnRandomCharacters(CharactersToSpawn, 0, Width,
             0, Depth, mMap);
