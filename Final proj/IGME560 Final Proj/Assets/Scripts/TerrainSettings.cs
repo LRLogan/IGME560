@@ -1,9 +1,9 @@
+using System.Collections.Generic;
 using UnityEngine;
 /// <summary>
 /// This class is a place to hold all the major terrain setting controls. This allows for faster modification and terrain tweaking 
 /// </summary>
-[CreateAssetMenu(fileName = "TerrainSettings", menuName = "Scriptable Objects/TerrainSettings")]
-public class TerrainSettings : ScriptableObject
+public class TerrainSettings : MonoBehaviour
 {
     [Header("Dimensions")]
     public int width = 256;
@@ -15,9 +15,20 @@ public class TerrainSettings : ScriptableObject
     [Range(0f, 1f)] public float persistence = 0.5f;
     public float lacunarity = 2f;
 
+    [Header("Fractal Settings")]
+    public int maxOctaves = 8;
+
+    // Controls which octaves are used 
+    public List<int> activeOctaves = new List<int>() { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+    // Domain/Range scaling
+    public float heightScale = 10;
+    public float heightOffset = 0;
+
     [Header("Height Modifiers")]
     public float heightMultiplier = 10f;
     public AnimationCurve heightCurve;
+    public float additionalCliffHeight = 90;
 
     [Header("Domain Warping")]
     public bool useDomainWarping = false;
@@ -25,10 +36,4 @@ public class TerrainSettings : ScriptableObject
 
     [Header("Seed")]
     public int seed = 42;
-
-    /*
-     * Resources:
-     * - Sebastian Lague (YouTube): Procedural Landmass Generation
-     * - The Book of Shaders (Noise + fBm): https://thebookofshaders.com/
-     */
 }

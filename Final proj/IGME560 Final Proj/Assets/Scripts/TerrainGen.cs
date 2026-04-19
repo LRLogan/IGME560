@@ -6,17 +6,31 @@ public class TerrainGen : MonoBehaviour
 {
     [SerializeField] private TerrainSettings settings;
     public float[,] heightMap = null;           // Exposing heightmap to program
+    private Mesh terrainMesh;
+    //private MeshData meshData;
+    //private MeshFilter mFilter;
+    //private MeshRenderer mRenderer;
 
     private void Start()
     {
         heightMap = GenerateHeightMap(settings.width, settings.height);
+        terrainMesh = GenerateTerrainMesh(heightMap);
+
+        GetComponent<MeshFilter>().mesh = terrainMesh;
+
+        //mFilter = GetComponent<MeshFilter>();
+        //mRenderer = GetComponent<MeshRenderer>();
+        //meshData = GenerateTerrainMesh2(heightMap);
+        //DrawMesh(meshData);
+        Debug.Log("Finished Terrain set up");
     }
 
     #region Noise gen 
 
     /// <summary>
     /// Generates a heightmap using fBm (Fractal Brownian Motion)
-    /// Supports optional domain warping for more natural variation</summary>
+    /// Supports optional domain warping for more natural variation
+    /// </summary>
     /// <param name="width"></param>
     /// <param name="height"></param>
     /// <returns></returns>
@@ -24,63 +38,196 @@ public class TerrainGen : MonoBehaviour
     {
         float[,] map = new float[width, height];
 
-        System.Random prng = new System.Random(settings.seed);
-
-        // Random offsets per octave to avoid tiling artifacts
-        Vector2[] octaveOffsets = new Vector2[settings.octaves];
-        for (int i = 0; i < settings.octaves; i++)
-        {
-            float offsetX = prng.Next(-100000, 100000);
-            float offsetY = prng.Next(-100000, 100000);
-            octaveOffsets[i] = new Vector2(offsetX, offsetY);
-        }
-
+        // Main generation loop
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
             {
-                float amplitude = 1;
-                float frequency = 1;
-                float noiseHeight = 0;
+                Vector2 p = new Vector2(x, z);
 
-                float sampleX = x / settings.scale;
-                float sampleZ = z / settings.scale;
+                float heightValue = FractalNoise(p, settings);
 
-                // DOMAIN WARPING (optional but high impact)
-                if (settings.useDomainWarping)
+                // Domain + Range scaling
+                //heightValue = settings.heightScale * heightValue + settings.heightOffset;
+
+                // Cliff scaling
+                /*
+                float cliffRangeVal = Smooth(500f, 600f, heightValue);
+                heightValue += settings.additionalCliffHeight * cliffRangeVal;
+                */
+                if (float.IsNaN(heightValue) || float.IsInfinity(heightValue))
                 {
-                    float warpX = Mathf.PerlinNoise(sampleX, sampleZ) * settings.warpStrength;
-                    float warpZ = Mathf.PerlinNoise(sampleZ, sampleX) * settings.warpStrength;
-
-                    sampleX += warpX;
-                    sampleZ += warpZ;
+                    Debug.LogError($"Invalid height at ({x},{z}): {heightValue}");
                 }
-
-                for (int i = 0; i < settings.octaves; i++)
+                else
                 {
-                    float xCoord = sampleX * frequency + octaveOffsets[i].x;
-                    float zCoord = sampleZ * frequency + octaveOffsets[i].y;
-
-                    float perlinValue = Mathf.PerlinNoise(xCoord, zCoord) * 2 - 1;
-                    noiseHeight += perlinValue * amplitude;
-
-                    amplitude *= settings.persistence;
-                    frequency *= settings.lacunarity;
+                    Debug.Log("Valid height: " + heightValue + "at " + x + " " + z);
                 }
-
-                map[x, z] = noiseHeight;
+                    map[x, z] = heightValue;
             }
         }
 
         return map;
     }
+
+    /// <summary>
+    /// Summation of the fractial part of the noise
+    /// </summary>
+    /// <param name="p"></param>
+    /// <param name="settings"></param>
+    /// <returns></returns>
+    private float FractalNoise(Vector2 p, TerrainSettings settings)
+    {
+        float sum = 0f;
+
+        for (int n = 0; n < settings.maxOctaves; n++)
+        {
+            // Optional octave filtering (N set concept)
+            if (!settings.activeOctaves.Contains(n))
+                continue;
+
+            float frequency = Mathf.Pow(2, n);
+            float amplitude = 1f / frequency;
+
+            Vector2 transformed = ApplyRotation(p * frequency, n);
+
+            sum += amplitude * GetValueNoise(transformed);
+        }
+
+        return sum;
+    }
+
+    /// <summary>
+    /// Applys a rotation matrix to each noise value 
+    /// </summary>
+    /// <param name="p"></param>
+    /// <param name="iteration"></param>
+    /// <returns></returns>
+    private Vector2 ApplyRotation(Vector2 p, int iteration)
+    {
+        /*
+         * Using a fixed pseudo-rotation:
+         * cos ~ 4/5, sin ~ 3/5
+         * 
+         * [ 4/5  -3/5 ]
+         * [ 3/5   4/5 ]
+         */
+
+        float cos = 0.8f;
+        float sin = 0.6f;
+
+        // Apply rotation multiple times (M^k)
+        for (int i = 0; i < iteration; i++)
+        {
+            p = new Vector2(
+                cos * p.x - sin * p.y,
+                sin * p.x + cos * p.y
+            );
+        }
+
+        return p;
+    }
+
+    /// <summary>
+    /// Gets a noise value at a givin coord in space
+    /// </summary>
+    /// <param name="p"></param>
+    /// <returns></returns>
+    private float GetValueNoise(Vector2 p)
+    {
+        int i = Mathf.FloorToInt(p.x);
+        int j = Mathf.FloorToInt(p.y);
+
+        float x = p.x - i;
+        float z = p.y - j;
+
+        // Corner values
+        float a = RandomValue(i, j);
+        float b = RandomValue(i + 1, j);
+        float c = RandomValue(i, j + 1);
+        float d = RandomValue(i + 1, j + 1);
+
+        // Smoothstep weights
+        float sx = Smooth(x);
+        float sz = Smooth(z);
+
+        /*
+         * Exact interpolation from notes:
+         * f_ij(x,z) =
+         * a +
+         * (b - a)S(x) +
+         * (c - a)S(z) +
+         * (a - b - c + d)S(x)S(z)
+         */
+
+        float value =
+            a +
+            (b - a) * sx +
+            (c - a) * sz +
+            (a - b - c + d) * sx * sz;
+
+        return value;
+    }
+
+
+    /// <summary>
+    /// Lambda version of Smoothstep function used in the equations
+    /// </summary>
+    /// <param name="t"></param>
+    /// <returns></returns>
+    private float Smooth(float t)
+    {
+        /* 
+         * Lambda version based smoothstep function from my notes
+         * S(lambda) = 3(lambda)^2 - 2(lambda)^3
+         */
+        return t * t * (3f - 2f * t);
+    }
+
+    /// <summary>
+    /// General Smoothstep function used in the equations
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <param name="x"></param>
+    /// <returns></returns>
+    private float Smooth(float a, float b, float x)
+    {
+        /*
+         * This is the smoothstep equation from my notes in a generalized form
+         * S(a,b,x)
+         */
+        float t = Mathf.Clamp01((x - a) / (b - a));
+        return t * t * (3f - 2f * t);
+    }
+
+    /// <summary>
+    /// Custom random num generator
+    /// </summary>
+    /// <param name="i"></param>
+    /// <param name="j"></param>
+    /// <returns></returns>
+    private float RandomValue(int i, int j)
+    {
+        /*
+         * In my notes:
+         * (u,v) = 50 { (i,j) / pi }
+         * a_ij = 2{uv(u+v)} - 1
+         * 
+         * This is approximated with a hash function
+         */
+        float x = Mathf.Sin(i * 12.9898f + 
+            j * 78.233f) * 43758.5453f;
+        return (x - Mathf.Floor(x)) * 2f - 1f;
+    }
     #endregion
 
     #region Mesh gen
-    /*
-     * Converts a heightmap into a mesh
-     * This is what actually renders your terrain
-     */
+    /// <summary>
+    /// Converts a heightmap into a mesh
+    /// </summary>
+    /// <param name="heightMap"></param>
+    /// <returns></returns>
     public Mesh GenerateTerrainMesh(float[,] heightMap)
     {
         int width = heightMap.GetLength(0);
@@ -98,7 +245,13 @@ public class TerrainGen : MonoBehaviour
             {
                 int i = z * width + x;
 
-                float heightValue = settings.heightCurve.Evaluate(heightMap[x, z]) * settings.heightMultiplier;
+                float normalizedHeight = Mathf.InverseLerp(
+                    settings.heightOffset - settings.heightScale,
+                    settings.heightOffset + settings.heightScale,
+                    heightMap[x, z]);
+
+                float heightValue = settings.heightCurve.Evaluate(normalizedHeight) * 
+                    settings.heightMultiplier;
 
                 vertices[i] = new Vector3(x, heightValue, z);
                 uvs[i] = new Vector2(x / (float)width, z / (float)height);
@@ -126,22 +279,44 @@ public class TerrainGen : MonoBehaviour
 
         return mesh;
     }
+
+    private MeshData GenerateTerrainMesh2(float[,] heightmap)
+    {
+        int width = heightmap.GetLength(0);
+        int height = heightmap.GetLength(1);
+        float topLeftX = (width - 1) / -2f;
+        float topLeftZ = (height - 1) / 2f;
+
+        MeshData meshData = new MeshData(width, height);
+        int vertIndex = 0;
+
+        for(int y = 0; y < height; y++)
+        {
+            for(int x = 0; x < width; x++)
+            {
+                meshData.verts[vertIndex] = new Vector3(topLeftX + x, heightMap[x,y], topLeftZ - y);
+                meshData.uvs[vertIndex] = new Vector2(x / (float)width, y / (float)height);
+
+                if (x < width - 1 && y < height - 1)
+                {
+                    meshData.AddTri(vertIndex, vertIndex + width + 1, vertIndex + width);
+                    meshData.AddTri(vertIndex + width + 1, vertIndex, vertIndex + 1);
+                }
+
+                vertIndex++;
+            }
+        }
+        return meshData;
+    }
+
+    public void DrawMesh(MeshData meshData)
+    {
+        //mFilter.mesh = meshData.CreateMesh();
+        //mRenderer.material.mainTexture = texture;
+    }
     #endregion
 
-    #region Terrain gen
-    /*
-     * Blocked out due to lack of noise reference / different archatecture
-    public void Generate()
-    {
-        // Generate height data
-        heightMap = Noise.GenerateHeightMap(settings.width, settings.height, settings);
-
-        // Convert to mesh
-        Mesh mesh = MeshGenerator.GenerateTerrainMesh(heightMap, settings);
-
-        GetComponent<MeshFilter>().mesh = mesh;
-    }
-    */
+    #region Terrain gen helpers
 
     /*
      * This function will be VERY important later
@@ -170,4 +345,40 @@ public class TerrainGen : MonoBehaviour
         return dx + dz;
     }
     #endregion
+}
+
+/// <summary>
+/// Mesh data class to handle mesh creation for ater possible optimization like threading 
+/// </summary>
+public class MeshData
+{
+    public Vector3[] verts;
+    public int[] triangles;
+    public Vector2[] uvs;
+    private int triIndex;
+
+    public MeshData(int meshWidth, int meshHeight)
+    {
+        verts = new Vector3[meshWidth * meshHeight];
+        uvs = new Vector2[meshWidth * meshHeight];
+        triangles = new int[(meshWidth - 1) * (meshHeight - 1) * 6];
+    }
+
+    public void AddTri(int a, int b, int c)
+    {
+        triangles[triIndex] = a;
+        triangles[triIndex + 1] = b;
+        triangles[triIndex + 2] = c;
+        triIndex += 3;
+    }
+
+    public Mesh CreateMesh()
+    {
+        Mesh mesh = new Mesh();
+        mesh.triangles = triangles;
+        mesh.vertices = verts;
+        mesh.uv = uvs;
+        mesh.RecalculateNormals();
+        return mesh;
+    }
 }
