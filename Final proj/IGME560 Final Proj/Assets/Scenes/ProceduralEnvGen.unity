@@ -167,9 +167,9 @@ MonoBehaviour:
   height: 64
   scale: 75
   seedOffset: {x: 0, y: 0}
-  seed: 42
+  seed: 24
   persistence: 0.6
-  maxOctaves: 8
+  maxOctaves: 10
   lacunarity: 2
   activeOctaves: 0000000001000000020000000300000004000000050000000600000007000000
   heightMultiplier: 10
@@ -179,18 +179,18 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 1
-      outSlope: 1
-      tangentMode: 34
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 1
-      outSlope: 1
-      tangentMode: 34
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -200,7 +200,7 @@ MonoBehaviour:
   useDomainWarping: 1
   warpStrength: 10
   cliffStart: 0.7
-  cliffEnd: 0.75
+  cliffEnd: 0.71
   cliffStrength: 5
 --- !u!1 &941970898
 GameObject:
