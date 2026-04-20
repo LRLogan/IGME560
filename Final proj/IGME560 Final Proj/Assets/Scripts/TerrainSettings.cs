@@ -22,7 +22,7 @@ public class TerrainSettings : MonoBehaviour
     public List<int> activeOctaves = new List<int>() { 0, 1, 2, 3, 4, 5, 6, 7 };
 
     // Domain/Range scaling
-    public float heightScale = 10;
+    public float heightScale = 100;
     public float heightOffset = 0;
 
     [Header("Height Modifiers")]
@@ -31,7 +31,7 @@ public class TerrainSettings : MonoBehaviour
     public float additionalCliffHeight = 90;
 
     [Header("Domain Warping")]
-    public bool useDomainWarping = false;
+    public bool useDomainWarping = true;
     public float warpStrength = 10f;
 
     [Header("Seed")]

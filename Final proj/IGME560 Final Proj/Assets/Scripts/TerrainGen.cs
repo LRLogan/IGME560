@@ -10,11 +10,26 @@ public class TerrainGen : MonoBehaviour
     //private MeshData meshData;
     //private MeshFilter mFilter;
     //private MeshRenderer mRenderer;
+    private float minHeight = float.MaxValue;
+    private float maxHeight = float.MinValue;
 
     private void Start()
     {
         heightMap = GenerateHeightMap(settings.width, settings.height);
-        terrainMesh = GenerateTerrainMesh(heightMap);
+
+        for (int x = 0; x < settings.width; x++)
+        {
+            for (int z = 0; z < settings.height; z++)
+            {
+                float h = heightMap[x, z];
+                if (h < minHeight) minHeight = h;
+                if (h > maxHeight) maxHeight = h;
+            }
+        }
+
+        Debug.Log($"HEIGHT RANGE: {minHeight} -> {maxHeight}");
+
+        terrainMesh = GenerateTerrainMesh(heightMap, minHeight, maxHeight);
 
         GetComponent<MeshFilter>().mesh = terrainMesh;
 
@@ -43,26 +58,17 @@ public class TerrainGen : MonoBehaviour
         {
             for (int z = 0; z < height; z++)
             {
-                Vector2 p = new Vector2(x, z);
+                Vector2 p = new Vector2(x, z) / settings.scale;
 
                 float heightValue = FractalNoise(p, settings);
 
                 // Domain + Range scaling
-                //heightValue = settings.heightScale * heightValue + settings.heightOffset;
+                heightValue = settings.heightScale * heightValue + settings.heightOffset;
 
                 // Cliff scaling
-                /*
                 float cliffRangeVal = Smooth(500f, 600f, heightValue);
                 heightValue += settings.additionalCliffHeight * cliffRangeVal;
-                */
-                if (float.IsNaN(heightValue) || float.IsInfinity(heightValue))
-                {
-                    Debug.LogError($"Invalid height at ({x},{z}): {heightValue}");
-                }
-                else
-                {
-                    Debug.Log("Valid height: " + heightValue + "at " + x + " " + z);
-                }
+                
                     map[x, z] = heightValue;
             }
         }
@@ -87,7 +93,7 @@ public class TerrainGen : MonoBehaviour
                 continue;
 
             float frequency = Mathf.Pow(2, n);
-            float amplitude = 1f / frequency;
+            float amplitude = Mathf.Pow(settings.persistence, n);
 
             Vector2 transformed = ApplyRotation(p * frequency, n);
 
@@ -228,7 +234,7 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="heightMap"></param>
     /// <returns></returns>
-    public Mesh GenerateTerrainMesh(float[,] heightMap)
+    public Mesh GenerateTerrainMesh(float[,] heightMap, float minHeight, float maxHeight)
     {
         int width = heightMap.GetLength(0);
         int height = heightMap.GetLength(1);
@@ -245,15 +251,18 @@ public class TerrainGen : MonoBehaviour
             {
                 int i = z * width + x;
 
-                float normalizedHeight = Mathf.InverseLerp(
-                    settings.heightOffset - settings.heightScale,
-                    settings.heightOffset + settings.heightScale,
-                    heightMap[x, z]);
+                float rawHeight = heightMap[x, z];
 
-                float heightValue = settings.heightCurve.Evaluate(normalizedHeight) * 
-                    settings.heightMultiplier;
+                // Normalize based on ACTUAL data range
+                float normalizedHeight = Mathf.InverseLerp(minHeight, maxHeight, rawHeight);
 
-                vertices[i] = new Vector3(x, heightValue, z);
+                // Apply curve shaping
+                float shapedHeight = settings.heightCurve.Evaluate(normalizedHeight);
+
+                // Final scaling
+                float finalHeight = shapedHeight * settings.heightMultiplier;
+
+                vertices[i] = new Vector3(x, finalHeight, z);
                 uvs[i] = new Vector2(x / (float)width, z / (float)height);
 
                 if (x < width - 1 && z < height - 1)
