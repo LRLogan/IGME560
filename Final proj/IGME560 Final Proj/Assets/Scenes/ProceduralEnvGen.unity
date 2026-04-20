@@ -163,16 +163,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69c4786616d4f9a4cad52479f5d5b82a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 256
-  height: 256
-  scale: 50
-  octaves: 5
-  persistence: 0.5
-  lacunarity: 2
+  width: 64
+  height: 64
+  scale: 75
+  seedOffset: {x: 0, y: 0}
+  seed: 42
+  persistence: 0.6
   maxOctaves: 8
+  lacunarity: 2
   activeOctaves: 0000000001000000020000000300000004000000050000000600000007000000
-  heightScale: 600
-  heightOffset: 600
   heightMultiplier: 10
   heightCurve:
     serializedVersion: 2
@@ -198,10 +197,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  additionalCliffHeight: 90
-  useDomainWarping: 0
+  useDomainWarping: 1
   warpStrength: 10
-  seed: 42
+  cliffStart: 0.7
+  cliffEnd: 0.75
+  cliffStrength: 5
 --- !u!1 &941970898
 GameObject:
   m_ObjectHideFlags: 0
@@ -507,7 +507,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 848390390ab9d3740bfc096a1bdda56b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

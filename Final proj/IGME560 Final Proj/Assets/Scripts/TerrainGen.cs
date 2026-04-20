@@ -27,6 +27,11 @@ public class TerrainGen : MonoBehaviour
             }
         }
 
+        settings.seedOffset = new Vector2(
+            Mathf.Sin(settings.seed) * 1000f,
+            Mathf.Cos(settings.seed) * 1000f
+        );
+
         Debug.Log($"HEIGHT RANGE: {minHeight} -> {maxHeight}");
 
         terrainMesh = GenerateTerrainMesh(heightMap, minHeight, maxHeight);
@@ -58,18 +63,11 @@ public class TerrainGen : MonoBehaviour
         {
             for (int z = 0; z < height; z++)
             {
-                Vector2 p = new Vector2(x, z) / settings.scale;
+                Vector2 p = (new Vector2(x, z) + settings.seedOffset) / settings.scale;
 
                 float heightValue = FractalNoise(p, settings);
-
-                // Domain + Range scaling
-                heightValue = settings.heightScale * heightValue + settings.heightOffset;
-
-                // Cliff scaling
-                float cliffRangeVal = Smooth(500f, 600f, heightValue);
-                heightValue += settings.additionalCliffHeight * cliffRangeVal;
                 
-                    map[x, z] = heightValue;
+                map[x, z] = heightValue;
             }
         }
 
@@ -92,7 +90,7 @@ public class TerrainGen : MonoBehaviour
             if (!settings.activeOctaves.Contains(n))
                 continue;
 
-            float frequency = Mathf.Pow(2, n);
+            float frequency = Mathf.Pow(settings.lacunarity, n);
             float amplitude = Mathf.Pow(settings.persistence, n);
 
             Vector2 transformed = ApplyRotation(p * frequency, n);
@@ -262,18 +260,22 @@ public class TerrainGen : MonoBehaviour
                 // Final scaling
                 float finalHeight = shapedHeight * settings.heightMultiplier;
 
+                // Cliff scaling
+                float cliffMask = Smooth(settings.cliffStart, settings.cliffEnd, normalizedHeight);
+                finalHeight += cliffMask * settings.cliffStrength;
+
                 vertices[i] = new Vector3(x, finalHeight, z);
                 uvs[i] = new Vector2(x / (float)width, z / (float)height);
 
                 if (x < width - 1 && z < height - 1)
                 {
                     triangles[triIndex + 0] = i;
-                    triangles[triIndex + 1] = i + width + 1;
-                    triangles[triIndex + 2] = i + width;
+                    triangles[triIndex + 1] = i + width;
+                    triangles[triIndex + 2] = i + width + 1;
 
                     triangles[triIndex + 3] = i;
-                    triangles[triIndex + 4] = i + 1;
-                    triangles[triIndex + 5] = i + width + 1;
+                    triangles[triIndex + 4] = i + width + 1;
+                    triangles[triIndex + 5] = i + 1;
 
                     triIndex += 6;
                 }

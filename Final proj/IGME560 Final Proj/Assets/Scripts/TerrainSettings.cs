@@ -1,39 +1,40 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 /// <summary>
 /// This class is a place to hold all the major terrain setting controls. This allows for faster modification and terrain tweaking 
 /// </summary>
 public class TerrainSettings : MonoBehaviour
 {
-    [Header("Dimensions")]
-    public int width = 256;
-    public int height = 256;
-    public float scale = 50f;
+    [Header("Dimensions and seed")]
+    public int width = 64;
+    public int height = 64;
+    public float scale = 10f;
+    public Vector2 seedOffset;
+    public int seed = 42;
 
     [Header("fBm Settings")]
-    public int octaves = 5;
-    [Range(0f, 1f)] public float persistence = 0.5f;
-    public float lacunarity = 2f;
+    // Higher persistence leads to more frequency contribution (more detail)
+    [Range(0f, 1f)] public float persistence = 0.6f;
 
     [Header("Fractal Settings")]
-    public int maxOctaves = 8;
+    public int maxOctaves = 10;
+    public float lacunarity = 2;
 
     // Controls which octaves are used 
-    public List<int> activeOctaves = new List<int>() { 0, 1, 2, 3, 4, 5, 6, 7 };
-
-    // Domain/Range scaling
-    public float heightScale = 100;
-    public float heightOffset = 0;
+    public List<int> activeOctaves = new List<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     [Header("Height Modifiers")]
-    public float heightMultiplier = 10f;
+    public float heightMultiplier = 100f;
     public AnimationCurve heightCurve;
-    public float additionalCliffHeight = 90;
 
     [Header("Domain Warping")]
     public bool useDomainWarping = true;
     public float warpStrength = 10f;
 
-    [Header("Seed")]
-    public int seed = 42;
+    [Header("Cliff Settings")]
+    public float cliffStart = 0.7f;
+    public float cliffEnd = 0.8f;
+    public float cliffStrength = 50f;
+
 }
