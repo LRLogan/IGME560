@@ -5,7 +5,7 @@ using UnityEngine;
 public class TerrainGen : MonoBehaviour
 {
     [SerializeField] private TerrainSettings settings;
-    public float[,] heightMap = null;           // Exposing heightmap to program
+    public Vector2[,] heightMap = null;   // Changes from float to vec2 for alternate archatecture        
     private Mesh terrainMesh;
     //private MeshData meshData;
     //private MeshFilter mFilter;
@@ -15,13 +15,16 @@ public class TerrainGen : MonoBehaviour
 
     private void Start()
     {
+        /*
         heightMap = GenerateHeightMap(settings.width, settings.height);
+        */
+        heightMap = GenerateTerrainHeightMap(settings.width, settings.scale);
 
         for (int x = 0; x < settings.width; x++)
         {
             for (int z = 0; z < settings.height; z++)
             {
-                float h = heightMap[x, z];
+                float h = heightMap[x, z].x;
                 if (h < minHeight) minHeight = h;
                 if (h > maxHeight) maxHeight = h;
             }
@@ -33,9 +36,9 @@ public class TerrainGen : MonoBehaviour
         );
 
         Debug.Log($"HEIGHT RANGE: {minHeight} -> {maxHeight}");
-
+        
         terrainMesh = GenerateTerrainMesh(heightMap, minHeight, maxHeight);
-
+        
         GetComponent<MeshFilter>().mesh = terrainMesh;
 
         //mFilter = GetComponent<MeshFilter>();
@@ -232,7 +235,7 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="heightMap"></param>
     /// <returns></returns>
-    public Mesh GenerateTerrainMesh(float[,] heightMap, float minHeight, float maxHeight)
+    public Mesh GenerateTerrainMesh(Vector2[,] heightMap, float minHeight, float maxHeight)
     {
         int width = heightMap.GetLength(0);
         int height = heightMap.GetLength(1);
@@ -249,7 +252,7 @@ public class TerrainGen : MonoBehaviour
             {
                 int i = z * width + x;
 
-                float rawHeight = heightMap[x, z];
+                float rawHeight = heightMap[x, z].x; // Changed to get x component for alternate archatecture
 
                 // Normalize based on ACTUAL data range
                 float normalizedHeight = Mathf.InverseLerp(minHeight, maxHeight, rawHeight);
@@ -291,7 +294,7 @@ public class TerrainGen : MonoBehaviour
         return mesh;
     }
 
-    private MeshData GenerateTerrainMesh2(float[,] heightmap)
+    private MeshData GenerateTerrainMesh2(Vector2[,] heightmap)
     {
         int width = heightmap.GetLength(0);
         int height = heightmap.GetLength(1);
@@ -305,7 +308,7 @@ public class TerrainGen : MonoBehaviour
         {
             for(int x = 0; x < width; x++)
             {
-                meshData.verts[vertIndex] = new Vector3(topLeftX + x, heightMap[x,y], topLeftZ - y);
+                meshData.verts[vertIndex] = new Vector3(topLeftX + x, heightMap[x,y].x, topLeftZ - y);
                 meshData.uvs[vertIndex] = new Vector2(x / (float)width, y / (float)height);
 
                 if (x < width - 1 && y < height - 1)
@@ -335,7 +338,7 @@ public class TerrainGen : MonoBehaviour
      */
     public float GetHeight(int x, int z)
     {
-        return heightMap[x, z];
+        return heightMap[x, z].x;
     }
 
     /*
@@ -359,7 +362,7 @@ public class TerrainGen : MonoBehaviour
 
     #region alternate workflow testing
     // Entry point
-    public static Vector2[,] GenerateTerrainMap(int size, float scale)
+    public static Vector2[,] GenerateTerrainHeightMap(int size, float scale)
     {
         Vector2[,] map = new Vector2[size, size];
 
@@ -371,7 +374,7 @@ public class TerrainGen : MonoBehaviour
 
                 map[x, z] = TerrainMap(samplePos);
             }
-        }
+        } 
 
         return map;
     }

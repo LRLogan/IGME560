@@ -165,7 +165,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   width: 64
   height: 64
-  scale: 75
+  scale: 45
   seedOffset: {x: 0, y: 0}
   seed: 24
   persistence: 0.6
