@@ -12,13 +12,17 @@ public class TerrainGen : MonoBehaviour
 
     private void Start()
     {
-        // Generate the height map
-        heightMap = GenerateTerrainHeightMap(settings.width, settings.scale);
+        // Placing terrain in center
+        this.gameObject.transform.position = new Vector3(-settings.size / 2, 0, -settings.size / 2);
 
+        // Generate the height map
+        heightMap = GenerateTerrainHeightMap(settings.size, settings.scale);
+
+        // --------------------------------------------------
         // Debug for height map
-        for (int x = 0; x < settings.width; x++)
+        for (int x = 0; x < settings.size; x++)
         {
-            for (int z = 0; z < settings.height; z++)
+            for (int z = 0; z < settings.size; z++)
             {
                 float h = heightMap[x, z].x;
                 if (h < minHeight) minHeight = h;
@@ -30,7 +34,8 @@ public class TerrainGen : MonoBehaviour
             Mathf.Cos(settings.seed) * 1000f
         );
         Debug.Log($"HEIGHT RANGE: {minHeight} -> {maxHeight}");
-        
+        // --------------------------------------------------
+
         // Generate the terrain mesh
         terrainMesh = GenerateTerrainMesh(heightMap, minHeight, maxHeight);        
         GetComponent<MeshFilter>().mesh = terrainMesh;
