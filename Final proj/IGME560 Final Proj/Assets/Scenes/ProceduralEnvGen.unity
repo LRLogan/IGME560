@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   size: 64
-  scale: 35
+  frequencyScale: 30
   seedOffset: {x: 0, y: 0}
   seed: 42
   persistence: 0.6

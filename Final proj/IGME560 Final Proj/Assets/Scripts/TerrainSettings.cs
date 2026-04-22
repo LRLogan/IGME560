@@ -8,7 +8,7 @@ public class TerrainSettings : MonoBehaviour
 {
     [Header("Dimensions and seed")]
     public int size = 64;
-    public float scale = 10f;
+    public float frequencyScale = 10f;
     public Vector2 seedOffset;
     public int seed = 42;
 

@@ -17,7 +17,7 @@ public class TerrainGen : MonoBehaviour
         this.gameObject.transform.position = new Vector3(-settings.size / 2, 0, -settings.size / 2);
 
         // Generate the height map
-        heightMap = GenerateTerrainHeightMap(settings.size, settings.scale, settings.useDomainWarping);
+        heightMap = GenerateTerrainHeightMap(settings);
 
         // --------------------------------------------------
         // Debug for height map
@@ -52,17 +52,18 @@ public class TerrainGen : MonoBehaviour
     /// <param name="size"></param>
     /// <param name="scale"></param>
     /// <returns></returns>
-    public static Vector2[,] GenerateTerrainHeightMap(int size, float scale, bool useDW)
+    public static Vector2[,] GenerateTerrainHeightMap(TerrainSettings settings)
     {
+        int size = settings.size;
         Vector2[,] map = new Vector2[size, size];
 
         for (int z = 0; z < size; z++)
         {
             for (int x = 0; x < size; x++)
             {
-                Vector2 samplePos = new Vector2(x * scale, z * scale);
+                Vector2 samplePos = new Vector2(x , z);
 
-                map[x, z] = TerrainMap(samplePos, useDW);
+                map[x, z] = TerrainMap(samplePos, settings);
             }
         }
 
@@ -312,21 +313,22 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="p"></param>
     /// <returns></returns>
-    public static Vector2 TerrainMap(Vector2 p, bool useDW)
+    public static Vector2 TerrainMap(Vector2 p, TerrainSettings settings)
     {
         float e;
+        Vector2 pScaled = p * settings.frequencyScale;
 
         // If domain warping should be used
-        if (useDW)
+        if (settings.useDomainWarping)
         {
             // Applying a domain warp before sampeling the noise
-            Vector2 warped = DomainWarp(p);
+            Vector2 warped = DomainWarp(pScaled);
 
             e = generateFBM(warped / 2000.0f + new Vector2(1.0f, -2.0f), 6);
         }
         else
         {
-            e = generateFBM(p / 2000.0f + new Vector2(1.0f, -2.0f), 6);
+            e = generateFBM(pScaled / 2000.0f + new Vector2(1.0f, -2.0f), 6);
         }
 
 
