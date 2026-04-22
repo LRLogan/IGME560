@@ -30,10 +30,12 @@ public class TerrainSettings : MonoBehaviour
     [Header("Domain Warping")]
     public bool useDomainWarping = true;
     public float warpStrength = 10f;
+    public float warpScale = 1f;
 
     [Header("Cliff Settings")]
     public float cliffStart = 0.7f;
     public float cliffEnd = 0.8f;
     public float cliffStrength = 50f;
 
+    public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }

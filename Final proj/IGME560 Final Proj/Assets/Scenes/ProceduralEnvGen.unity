@@ -164,13 +164,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   size: 64
-  scale: 45
+  scale: 35
   seedOffset: {x: 0, y: 0}
-  seed: 24
+  seed: 42
   persistence: 0.6
   maxOctaves: 10
   lacunarity: 2
-  activeOctaves: 0000000001000000020000000300000004000000050000000600000007000000
+  activeOctaves: 000000000100000002000000
   heightMultiplier: 10
   heightCurve:
     serializedVersion: 2
@@ -178,18 +178,18 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0
@@ -197,7 +197,8 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   useDomainWarping: 1
-  warpStrength: 10
+  warpStrength: 500
+  warpScale: 0.0005
   cliffStart: 0.7
   cliffEnd: 0.71
   cliffStrength: 5

@@ -1,3 +1,4 @@
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ public class TerrainGen : MonoBehaviour
         this.gameObject.transform.position = new Vector3(-settings.size / 2, 0, -settings.size / 2);
 
         // Generate the height map
-        heightMap = GenerateTerrainHeightMap(settings.size, settings.scale);
+        heightMap = GenerateTerrainHeightMap(settings.size, settings.scale, settings.useDomainWarping);
 
         // --------------------------------------------------
         // Debug for height map
@@ -51,7 +52,7 @@ public class TerrainGen : MonoBehaviour
     /// <param name="size"></param>
     /// <param name="scale"></param>
     /// <returns></returns>
-    public static Vector2[,] GenerateTerrainHeightMap(int size, float scale)
+    public static Vector2[,] GenerateTerrainHeightMap(int size, float scale, bool useDW)
     {
         Vector2[,] map = new Vector2[size, size];
 
@@ -61,7 +62,7 @@ public class TerrainGen : MonoBehaviour
             {
                 Vector2 samplePos = new Vector2(x * scale, z * scale);
 
-                map[x, z] = TerrainMap(samplePos);
+                map[x, z] = TerrainMap(samplePos, useDW);
             }
         }
 
@@ -249,14 +250,14 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="x"></param>
     /// <returns></returns>
-    static float generateFBM(Vector2 x)
+    static float generateFBM(Vector2 x, int iterations)
     {
         float f = 1.9f;
         float s = 0.55f;
         float a = 0.0f;
         float b = 0.5f;
 
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < iterations; i++)
         {
             float n = Noise(x);
             a += b * n;
@@ -273,7 +274,7 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="x"></param>
     /// <returns></returns>
-    static Vector3 generateFBMWithD(Vector2 x)
+    static Vector3 generateFBMWithD(Vector2 x, int iterations)
     {
         float f = 1.9f;
         float s = 0.55f;
@@ -283,7 +284,7 @@ public class TerrainGen : MonoBehaviour
         Vector2 d = Vector2.zero;
         Matrix4x4 m = Matrix4x4.identity;
 
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < iterations; i++)
         {
             Vector3 n = NoiseD(x);
 
@@ -311,11 +312,25 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="p"></param>
     /// <returns></returns>
-    public static Vector2 TerrainMap(Vector2 p)
+    public static Vector2 TerrainMap(Vector2 p, bool useDW)
     {
-        float e = generateFBM(p / 2000.0f + new Vector2(1.0f, -2.0f));
+        float e;
 
-        float a = 1.0f - Mathf.SmoothStep(0.12f, 0.13f, Mathf.Abs(e + 0.12f));
+        // If domain warping should be used
+        if (useDW)
+        {
+            // Applying a domain warp before sampeling the noise
+            Vector2 warped = DomainWarp(p);
+
+            e = generateFBM(warped / 2000.0f + new Vector2(1.0f, -2.0f), 6);
+        }
+        else
+        {
+            e = generateFBM(p / 2000.0f + new Vector2(1.0f, -2.0f), 6);
+        }
+
+
+            float a = 1.0f - Mathf.SmoothStep(0.12f, 0.13f, Mathf.Abs(e + 0.12f));
 
         e = 600.0f * e + 600.0f;
 
@@ -332,7 +347,7 @@ public class TerrainGen : MonoBehaviour
     /// <returns></returns>
     public static Vector4 TerrainMapD(Vector2 p)
     {
-        Vector3 e = generateFBMWithD(p / 2000.0f + new Vector2(1.0f, -2.0f));
+        Vector3 e = generateFBMWithD(p / 2000.0f + new Vector2(1.0f, -2.0f), 9);
 
         e.x = 600.0f * e.x + 600.0f;
         e.y *= 600.0f;
@@ -359,12 +374,23 @@ public class TerrainGen : MonoBehaviour
         return new Vector3(data.y, data.z, data.w);
     }
 
-    // Convenience function for height only
-    public static float GetHeight(Vector2 pos)
+    /// <summary>
+    /// Applys a warp to the position vector
+    /// </summary>
+    /// <param name="pos"></param>
+    /// <returns></returns>
+    private static Vector2 DomainWarp(Vector2 pos)
     {
-        return TerrainMap(pos).x;
-    }
+        Vector2 warpSettings = FindAnyObjectByType<TerrainSettings>()
+            .GetDomainWarpSettings();
+        float warpScale = warpSettings.y;
+        float warpStrength = warpSettings.x;
 
+        float warpedX = generateFBM(pos * warpScale + new Vector2(5.2f, 1.3f), 4);
+        float warpedY = generateFBM(pos * warpScale + new Vector2(9.1f, 7.4f), 4);
+
+        return pos + new Vector2(warpedX, warpedY) * warpStrength;
+    }
 
     #endregion
 
