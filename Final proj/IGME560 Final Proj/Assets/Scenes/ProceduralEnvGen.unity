@@ -166,7 +166,7 @@ MonoBehaviour:
   size: 64
   frequencyScale: 30
   seedOffset: {x: 0, y: 0}
-  seed: 42
+  seed: 24
   persistence: 0.6
   maxOctaves: 10
   lacunarity: 2

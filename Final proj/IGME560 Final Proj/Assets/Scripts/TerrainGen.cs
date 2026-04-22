@@ -38,7 +38,7 @@ public class TerrainGen : MonoBehaviour
         // --------------------------------------------------
 
         // Generate the terrain mesh
-        terrainMesh = GenerateTerrainMesh(heightMap, minHeight, maxHeight);        
+        terrainMesh = GenerateTerrainMesh(heightMap, minHeight, maxHeight, settings);        
         GetComponent<MeshFilter>().mesh = terrainMesh;
 
         Debug.Log("Finished Terrain set up");
@@ -61,7 +61,7 @@ public class TerrainGen : MonoBehaviour
         {
             for (int x = 0; x < size; x++)
             {
-                Vector2 samplePos = new Vector2(x , z);
+                Vector2 samplePos = new Vector2(x , z) + settings.seedOffset;
 
                 map[x, z] = TerrainMap(samplePos, settings);
             }
@@ -413,7 +413,7 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="heightMap"></param>
     /// <returns></returns>
-    public Mesh GenerateTerrainMesh(Vector2[,] heightMap, float minHeight, float maxHeight)
+    public Mesh GenerateTerrainMesh(Vector2[,] heightMap, float minHeight, float maxHeight, TerrainSettings settings)
     {
         int width = heightMap.GetLength(0);
         int height = heightMap.GetLength(1);
@@ -430,7 +430,36 @@ public class TerrainGen : MonoBehaviour
             {
                 int i = z * width + x;
 
-                float rawHeight = heightMap[x, z].x; 
+                float rawHeight = heightMap[x, z].x;
+
+                // Attempting to check the mesh for sharp changes in height to ge trid of noise / cliff artifacts
+                float sum = 0f;
+                int count = 0;
+
+                for (int dz = -1; dz <= 1; dz++)
+                {
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        if (dx == 0 && dz == 0) continue;
+
+                        int nx = x + dx;
+                        int nz = z + dz;
+
+                        if (nx >= 0 && nx < width && nz >= 0 && nz < height)
+                        {
+                            sum += heightMap[nx, nz].x;
+                            count++;
+                        }
+                    }
+                }
+
+                float avg = sum / count;
+                float curvature = Mathf.Abs(rawHeight - avg);
+
+                if (curvature > settings.spikeCurvatureThreshold)
+                {
+                    rawHeight = Mathf.Lerp(rawHeight, avg, 0.8f);
+                }
 
                 // Normalize based on ACTUAL data range
                 float normalizedHeight = Mathf.InverseLerp(minHeight, maxHeight, rawHeight);

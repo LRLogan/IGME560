@@ -26,6 +26,7 @@ public class TerrainSettings : MonoBehaviour
     [Header("Height Modifiers")]
     public float heightMultiplier = 100f;
     public AnimationCurve heightCurve;
+    public float spikeCurvatureThreshold = 50;
 
     [Header("Domain Warping")]
     public bool useDomainWarping = true;
