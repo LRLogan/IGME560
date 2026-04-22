@@ -6,7 +6,7 @@ using UnityEngine;
 public class TerrainGen : MonoBehaviour
 {
     [SerializeField] private TerrainSettings settings;
-    public Vector2[,] heightMap = null;         
+    public Vector2[,] heightMap = null;  // Holds height and slope at the moment       
     private Mesh terrainMesh;
     private float minHeight = float.MaxValue;
     private float maxHeight = float.MinValue;
@@ -424,6 +424,7 @@ public class TerrainGen : MonoBehaviour
 
         int triIndex = 0;
 
+        // Iterate over the entire noise array
         for (int z = 0; z < height; z++)
         {
             for (int x = 0; x < width; x++)
@@ -433,33 +434,12 @@ public class TerrainGen : MonoBehaviour
                 float rawHeight = heightMap[x, z].x;
 
                 // Attempting to check the mesh for sharp changes in height to ge trid of noise / cliff artifacts
-                float sum = 0f;
-                int count = 0;
-
-                for (int dz = -1; dz <= 1; dz++)
-                {
-                    for (int dx = -1; dx <= 1; dx++)
-                    {
-                        if (dx == 0 && dz == 0) continue;
-
-                        int nx = x + dx;
-                        int nz = z + dz;
-
-                        if (nx >= 0 && nx < width && nz >= 0 && nz < height)
-                        {
-                            sum += heightMap[nx, nz].x;
-                            count++;
-                        }
-                    }
-                }
-
-                float avg = sum / count;
-                float curvature = Mathf.Abs(rawHeight - avg);
-
-                if (curvature > settings.spikeCurvatureThreshold)
-                {
-                    rawHeight = Mathf.Lerp(rawHeight, avg, 0.8f);
-                }
+                /*
+                 * PSEUDOCODE:
+                 * Scan over every point on the grid
+                 * Check that points 8 neighbors while accounting for edge of the grid 
+                 * OR (Possibly just check slope of that point) (Slope seems to be a bit buggy)
+                 */
 
                 // Normalize based on ACTUAL data range
                 float normalizedHeight = Mathf.InverseLerp(minHeight, maxHeight, rawHeight);
