@@ -197,7 +197,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   useDomainWarping: 1
-  warpStrength: 500
+  warpStrength: -700
   warpScale: 0.0005
   cliffStart: 0.7
   cliffEnd: 0.71

@@ -330,7 +330,7 @@ public class TerrainGen : MonoBehaviour
         }
 
 
-            float a = 1.0f - Mathf.SmoothStep(0.12f, 0.13f, Mathf.Abs(e + 0.12f));
+        float a = 1.0f - Mathf.SmoothStep(0.12f, 0.13f, Mathf.Abs(e + 0.12f));
 
         e = 600.0f * e + 600.0f;
 
@@ -386,10 +386,21 @@ public class TerrainGen : MonoBehaviour
         float warpScale = warpSettings.y;
         float warpStrength = warpSettings.x;
 
-        float warpedX = generateFBM(pos * warpScale + new Vector2(5.2f, 1.3f), 4);
-        float warpedY = generateFBM(pos * warpScale + new Vector2(9.1f, 7.4f), 4);
+        // First warp layer
+        Vector2 warp1 = new Vector2(
+            generateFBM(pos * warpScale + new Vector2(5.2f, 1.3f), 4),
+            generateFBM(pos * warpScale + new Vector2(9.1f, 7.4f), 4)
+        );
 
-        return pos + new Vector2(warpedX, warpedY) * warpStrength;
+        Vector2 p2 = pos + warp1 * warpStrength;
+
+        // Second warp layer (smaller, sharper detail)
+        Vector2 warp2 = new Vector2(
+            generateFBM(p2 * (warpScale * 2.0f) + new Vector2(3.1f, 4.7f), 3),
+            generateFBM(p2 * (warpScale * 2.0f) + new Vector2(8.3f, 2.8f), 3)
+        );
+
+        return p2 + warp2 * (warpStrength * 0.5f);
     }
 
     #endregion
@@ -417,7 +428,7 @@ public class TerrainGen : MonoBehaviour
             {
                 int i = z * width + x;
 
-                float rawHeight = heightMap[x, z].x; // Changed to get x component for alternate archatecture
+                float rawHeight = heightMap[x, z].x; 
 
                 // Normalize based on ACTUAL data range
                 float normalizedHeight = Mathf.InverseLerp(minHeight, maxHeight, rawHeight);
@@ -458,78 +469,6 @@ public class TerrainGen : MonoBehaviour
 
         return mesh;
     }
-
-    private MeshData GenerateTerrainMesh2(Vector2[,] heightmap)
-    {
-        int width = heightmap.GetLength(0);
-        int height = heightmap.GetLength(1);
-        float topLeftX = (width - 1) / -2f;
-        float topLeftZ = (height - 1) / 2f;
-
-        MeshData meshData = new MeshData(width, height);
-        int vertIndex = 0;
-
-        for(int y = 0; y < height; y++)
-        {
-            for(int x = 0; x < width; x++)
-            {
-                meshData.verts[vertIndex] = new Vector3(topLeftX + x, heightMap[x,y].x, topLeftZ - y);
-                meshData.uvs[vertIndex] = new Vector2(x / (float)width, y / (float)height);
-
-                if (x < width - 1 && y < height - 1)
-                {
-                    meshData.AddTri(vertIndex, vertIndex + width + 1, vertIndex + width);
-                    meshData.AddTri(vertIndex + width + 1, vertIndex, vertIndex + 1);
-                }
-
-                vertIndex++;
-            }
-        }
-        return meshData;
-    }
-
-    public void DrawMesh(MeshData meshData)
-    {
-        //mFilter.mesh = meshData.CreateMesh();
-        //mRenderer.material.mainTexture = texture;
-    }
     #endregion
 
-}
-
-
-/// <summary>
-/// Mesh data class to handle mesh creation for ater possible optimization like threading 
-/// </summary>
-public class MeshData
-{
-    public Vector3[] verts;
-    public int[] triangles;
-    public Vector2[] uvs;
-    private int triIndex;
-
-    public MeshData(int meshWidth, int meshHeight)
-    {
-        verts = new Vector3[meshWidth * meshHeight];
-        uvs = new Vector2[meshWidth * meshHeight];
-        triangles = new int[(meshWidth - 1) * (meshHeight - 1) * 6];
-    }
-
-    public void AddTri(int a, int b, int c)
-    {
-        triangles[triIndex] = a;
-        triangles[triIndex + 1] = b;
-        triangles[triIndex + 2] = c;
-        triIndex += 3;
-    }
-
-    public Mesh CreateMesh()
-    {
-        Mesh mesh = new Mesh();
-        mesh.triangles = triangles;
-        mesh.vertices = verts;
-        mesh.uv = uvs;
-        mesh.RecalculateNormals();
-        return mesh;
-    }
 }
