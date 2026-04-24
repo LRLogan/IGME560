@@ -315,29 +315,44 @@ public class TerrainGen : MonoBehaviour
     /// <returns></returns>
     public static Vector2 TerrainMap(Vector2 p, TerrainSettings settings)
     {
-        float e;
         Vector2 pScaled = p * settings.frequencyScale;
 
-        // If domain warping should be used
+        Vector2 samplePoint;
+
         if (settings.useDomainWarping)
         {
-            // Applying a domain warp before sampeling the noise
-            Vector2 warped = DomainWarp(pScaled);
-
-            e = generateFBM(warped / 2000.0f + new Vector2(1.0f, -2.0f), 6);
+            samplePoint = DomainWarp(pScaled);
         }
         else
         {
-            e = generateFBM(pScaled / 2000.0f + new Vector2(1.0f, -2.0f), 6);
+            samplePoint = pScaled;
         }
 
+        Vector2 baseCoord = samplePoint / 2000.0f + new Vector2(1.0f, -2.0f);
 
-        float a = 1.0f - Mathf.SmoothStep(0.12f, 0.13f, Mathf.Abs(e + 0.12f));
+        float e = generateFBM(baseCoord, 6);
 
+        // Apply height scaling
         e = 600.0f * e + 600.0f;
 
-        // cliff shaping
+        // Cliff shaping
         e += 90.0f * Mathf.SmoothStep(552.0f, 594.0f, e);
+
+        // Slope calculation 
+        float eps = 0.01f;
+
+        float hx = generateFBM(baseCoord + new Vector2(eps, 0), 6);
+        float hz = generateFBM(baseCoord + new Vector2(0, eps), 6);
+
+        hx = 600.0f * hx + 600.0f;
+        hz = 600.0f * hz + 600.0f;
+
+        float dx = (hx - e) / eps;
+        float dz = (hz - e) / eps;
+
+        float slope = Mathf.Sqrt(dx * dx + dz * dz);
+
+        float a = Mathf.Clamp01(slope * settings.slopeScale);
 
         return new Vector2(e, a);
     }
@@ -424,6 +439,8 @@ public class TerrainGen : MonoBehaviour
 
         int triIndex = 0;
 
+        float minSlope = float.MaxValue, maxSlope = float.MinValue;
+
         // Iterate over the entire noise array
         for (int z = 0; z < height; z++)
         {
@@ -469,6 +486,10 @@ public class TerrainGen : MonoBehaviour
 
                     triIndex += 6;
                 }
+
+                float s = heightMap[x, z].y;
+                if (s < minSlope) minSlope = s;
+                if (s > maxSlope) maxSlope = s;
             }
         }
 
@@ -477,6 +498,9 @@ public class TerrainGen : MonoBehaviour
         mesh.triangles = triangles;
         mesh.uv = uvs;
         mesh.RecalculateNormals();
+
+        Debug.Log("Min slope: " + minSlope);
+        Debug.Log("Max slope: " + maxSlope);
 
         return mesh;
     }
