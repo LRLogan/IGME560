@@ -473,11 +473,11 @@ public class TerrainGen : MonoBehaviour
 
                 // Final scaling
                 float finalHeight = shapedHeight * settings.heightMultiplier;
-                heightMap[x, z].height = finalHeight;
 
                 // Cliff scaling
                 float cliffMask = Smoothstep(settings.cliffStart, settings.cliffEnd, normalizedHeight);
                 finalHeight += cliffMask * settings.cliffStrength;
+                heightMap[x, z].height = finalHeight;
 
                 vertices[i] = new Vector3(x, finalHeight, z);
                 uvs[i] = new Vector2(x / (float)width, z / (float)height);
