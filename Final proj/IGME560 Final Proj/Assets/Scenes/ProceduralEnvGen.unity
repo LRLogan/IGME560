@@ -323,6 +323,7 @@ MonoBehaviour:
   rotSpeed: 0.5
   maxZoom: 10
   minZoom: 10
+  startZoom: 15
 --- !u!114 &941970903
 MonoBehaviour:
   m_ObjectHideFlags: 0

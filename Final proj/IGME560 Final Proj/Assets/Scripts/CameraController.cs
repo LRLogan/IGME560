@@ -14,14 +14,20 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float rotSpeed = .5f;
 
     // For clamping that has not been implimented yet
-    [SerializeField] private float maxZoom = 10;
-    [SerializeField] private float minZoom = 0;
+    [SerializeField] private float maxZoom = 15;
+    [SerializeField] private float minZoom = 2;
+    [SerializeField] private float startZoom = 15;
 
 
     private void Awake()
     {
         xRot = transform.rotation.eulerAngles.x;
         thisCam = GetComponent<Camera>();
+    }
+
+    private void Start()
+    {
+        thisCam.orthographicSize = Mathf.Clamp(startZoom, minZoom, maxZoom);
     }
 
     public void OnLook(InputAction.CallbackContext context)

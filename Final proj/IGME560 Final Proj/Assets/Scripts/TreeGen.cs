@@ -219,7 +219,11 @@ public class TreeGen : MonoBehaviour
         }
     }
 
-
+    /// <summary>
+    /// Accounts for the terrain offset
+    /// </summary>
+    /// <param name="pos"></param>
+    /// <returns></returns>
     private Vector3 AdjustPosToTerrain(Vector3 pos)
     {
         return new Vector3(
