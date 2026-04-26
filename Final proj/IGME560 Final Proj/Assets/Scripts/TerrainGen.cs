@@ -63,7 +63,7 @@ public class TerrainGen : MonoBehaviour
             {
                 Vector2 samplePos = new Vector2(x , z) + settings.seedOffset;
 
-                map[x, z] = TerrainMap(samplePos, settings);
+                map[x, z] = TerrainMapD(samplePos, settings);
             }
         }
 
@@ -362,33 +362,37 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="p"></param>
     /// <returns></returns>
-    public static Vector4 TerrainMapD(Vector2 p)
+    public static TerrainPointData TerrainMapD(Vector2 p, TerrainSettings settings)
     {
-        Vector3 e = generateFBMWithD(p / 2000.0f + new Vector2(1.0f, -2.0f), 9);
+        Vector2 pScaled = p * settings.frequencyScale;
 
+        Vector2 samplePoint = settings.useDomainWarping
+            ? DomainWarp(pScaled)
+            : pScaled;
+
+        Vector2 baseCoord = samplePoint / 2000.0f + new Vector2(1.0f, -2.0f);
+
+        Vector3 e = generateFBMWithD(baseCoord, 6);
+
+        // Apply height scaling
         e.x = 600.0f * e.x + 600.0f;
         e.y *= 600.0f;
         e.z *= 600.0f;
 
-        Vector2 c = SmoothstepD(550.0f, 600.0f, e.x);
+        // Cliff shaping with derivative
+        Vector2 c = SmoothstepD(552.0f, 594.0f, e.x);
 
         e.x += 90.0f * c.x;
         e.y += 90.0f * c.y * e.y;
         e.z += 90.0f * c.y * e.z;
 
-        e.y /= 2000.0f;
-        e.z /= 2000.0f;
+        // Compute slope BEFORE normalization
+        float slope = Mathf.Sqrt(e.y * e.y + e.z * e.z);
 
+        // Compute normal AFTER slope
         Vector3 normal = new Vector3(-e.y, 1.0f, -e.z).normalized;
 
-        return new Vector4(e.x, normal.x, normal.y, normal.z);
-    }
-
-    // Get terrain normal only
-    public static Vector3 TerrainNormal(Vector2 pos)
-    {
-        Vector4 data = TerrainMapD(pos);
-        return new Vector3(data.y, data.z, data.w);
+        return new TerrainPointData(e.x, slope, normal);
     }
 
     /// <summary>

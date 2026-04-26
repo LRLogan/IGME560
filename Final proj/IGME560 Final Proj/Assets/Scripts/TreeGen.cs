@@ -15,6 +15,8 @@ public class TreeGen : MonoBehaviour
     private float[,] treeOverlayNoise;
     [SerializeField] private TerrainSettings settings;
 
+    public GameObject tempTreeObj;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -42,11 +44,12 @@ public class TreeGen : MonoBehaviour
                 treeOverlayNoise[i,j] = Mathf.PerlinNoise(i * settings.treeNoiseFrequency, j * settings.treeNoiseFrequency);
 
                 // convert the noise value to a solid itaration number and include the density modifier
-                int iterate = 1/*change this*/ * settings.treeDensityMod;
+                int iterate = (int)(treeOverlayNoise[i, j] * settings.treeDensityMod);
 
                 // Create that amount of trees in the respective sector on the terrainGrid
                 for(int t = 0; t < iterate; t++)
                 {
+                    // Get an unoccupied locatiojn on the terrain grid and place a tree on it
 
                 }
 
@@ -54,6 +57,11 @@ public class TreeGen : MonoBehaviour
         }
 
 
+    }
+
+    private void SpawnTempOnj(Vector3 placePos)
+    {
+        Instantiate(tempTreeObj, placePos, Quaternion.identity);
     }
 
     /// <summary>
