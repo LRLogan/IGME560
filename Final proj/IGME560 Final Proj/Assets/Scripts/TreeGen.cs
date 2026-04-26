@@ -5,18 +5,23 @@ using System.Text;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.IO;
+using System.Text;
 
 public class TreeGen : MonoBehaviour
 {
     private Hashtable ruleSet = new Hashtable(10);
-    private StringBuilder rulesToDo = new StringBuilder("");
-    private StringBuilder startRule = new StringBuilder("");
+    private StringBuilder rulesToDo = new StringBuilder("");    // lang in IGME540 PE
+    private StringBuilder startRule;
     private TerrainGen terrainGen;
     private TerrainPointData[,] heightMap;
     private float[,] treeOverlayNoise;
     [SerializeField] private TerrainSettings settings;
 
+    // Temp vars while trees are not done
     public GameObject tempTreeObj;
+    private float angleToUse = 25f;
+    private int iterations = 4;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public void StartFullTreeGenSeq()
@@ -26,6 +31,12 @@ public class TreeGen : MonoBehaviour
         treeOverlayNoise = new float[heightMap.GetLength(0) / settings.treeNoiseTerrainRatio,
             heightMap.GetLength(1) / settings.treeNoiseTerrainRatio];
 
+        // Hard coding a starter l-sys
+        startRule = new StringBuilder("X");
+        ruleSet.Add("X", "F-[[X]+X]+F[+FX]-X");
+        ruleSet.Add("F", "FF");
+
+        // Start the generation pipeline
         SurveyGrid();
     }
 
@@ -165,7 +176,7 @@ public class TreeGen : MonoBehaviour
         {
             for(int j = 0; j < curRule.Length; j++)
             {
-                string buffer = GetRule(rulesToDo[j].ToString());
+                string buffer = GetRule(curRule[j].ToString());
                 curRule = curRule.Replace(curRule[j].ToString(), buffer, j, 1);
                 j += buffer.Length - 1;
             }
