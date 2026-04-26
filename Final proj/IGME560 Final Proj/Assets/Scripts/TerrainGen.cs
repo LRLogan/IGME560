@@ -6,7 +6,7 @@ using UnityEngine;
 public class TerrainGen : MonoBehaviour
 {
     [SerializeField] private TerrainSettings settings;
-    public Vector2[,] heightMap = null;  // Holds height and slope at the moment       
+    public TerrainPointData[,] heightMap = null;  // Holds height and slope at the moment       
     private Mesh terrainMesh;
     private float minHeight = float.MaxValue;
     private float maxHeight = float.MinValue;
@@ -25,7 +25,7 @@ public class TerrainGen : MonoBehaviour
         {
             for (int z = 0; z < settings.size; z++)
             {
-                float h = heightMap[x, z].x;
+                float h = heightMap[x, z].height;
                 if (h < minHeight) minHeight = h;
                 if (h > maxHeight) maxHeight = h;
             }
@@ -52,10 +52,10 @@ public class TerrainGen : MonoBehaviour
     /// <param name="size"></param>
     /// <param name="scale"></param>
     /// <returns></returns>
-    public static Vector2[,] GenerateTerrainHeightMap(TerrainSettings settings)
+    public static TerrainPointData[,] GenerateTerrainHeightMap(TerrainSettings settings)
     {
         int size = settings.size;
-        Vector2[,] map = new Vector2[size, size];
+        TerrainPointData[,] map = new TerrainPointData[size, size];
 
         for (int z = 0; z < size; z++)
         {
@@ -313,7 +313,7 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="p"></param>
     /// <returns></returns>
-    public static Vector2 TerrainMap(Vector2 p, TerrainSettings settings)
+    public static TerrainPointData TerrainMap(Vector2 p, TerrainSettings settings)
     {
         Vector2 pScaled = p * settings.frequencyScale;
 
@@ -354,7 +354,7 @@ public class TerrainGen : MonoBehaviour
 
         float a = Mathf.Clamp01(slope * settings.slopeScale);
 
-        return new Vector2(e, a);
+        return new TerrainPointData(e, a);
     }
 
     /// <summary>
@@ -428,7 +428,7 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     /// <param name="heightMap"></param>
     /// <returns></returns>
-    public Mesh GenerateTerrainMesh(Vector2[,] heightMap, float minHeight, float maxHeight, TerrainSettings settings)
+    public Mesh GenerateTerrainMesh(TerrainPointData[,] heightMap, float minHeight, float maxHeight, TerrainSettings settings)
     {
         int width = heightMap.GetLength(0);
         int height = heightMap.GetLength(1);
@@ -448,7 +448,7 @@ public class TerrainGen : MonoBehaviour
             {
                 int i = z * width + x;
 
-                float rawHeight = heightMap[x, z].x;
+                float rawHeight = heightMap[x, z].height;
 
                 // Attempting to check the mesh for sharp changes in height to ge trid of noise / cliff artifacts
                 /*
@@ -487,7 +487,7 @@ public class TerrainGen : MonoBehaviour
                     triIndex += 6;
                 }
 
-                float s = heightMap[x, z].y;
+                float s = heightMap[x, z].slope;
                 if (s < minSlope) minSlope = s;
                 if (s > maxSlope) maxSlope = s;
             }
