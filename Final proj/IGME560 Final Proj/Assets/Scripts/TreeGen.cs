@@ -21,22 +21,23 @@ public class TreeGen : MonoBehaviour
     }
 
     /// <summary>
-    /// Prepares the density of trees in each area of the terrain grid
+    /// Prepares the density of trees in each area of the terrain grid and manages overall placement
     /// </summary>
     private void SurveyGrid()
     {
         // A setting will control how far we are zoomed in on a new perlin noise grid
         // This grid will then overlay the terrain grid such that a cluster of terrain points will be mapped to a single tree noise node
         // Depending on the value of the overlay grid we will know how dense that area should be
-        // Lastly we can place the tree based on the terrain grid and its point data
+        // Lastly we can create and place the tree based on the terrain grid and its point data
     }
 
     /// <summary>
-    /// Builds a tree with a givin number of iterations 
+    /// Builds a tree with a givin number of iterations and placesit accordingly 
     /// </summary>
     /// <param name="iterations"></param>
-    private void IterateTree(int iterations)
+    private void CreateTree(int iterations, Vector3 placePos)
     {
+        // Build the tree
         StringBuilder curRule = startRule;
         for(int i = 0; i < iterations; i++)
         {
@@ -48,6 +49,8 @@ public class TreeGen : MonoBehaviour
             }
         }
         rulesToDo = curRule;
+
+        // Lastly place the tree
     }
 
     /// <summary>
@@ -60,7 +63,7 @@ public class TreeGen : MonoBehaviour
 
 
     /// <summary>
-    /// Responcible for dispatching a set of rules for constructing a tree in local space
+    /// Responcible for dispatching a set of rules for constructing a tree
     /// </summary>
     private void Dispatch()
     {
@@ -91,15 +94,6 @@ public class TreeGen : MonoBehaviour
                     break;
             }
         }
-    }
-
-    /// <summary>
-    /// Places trees on the terrain 
-    /// </summary>
-    public void Place()
-    {
-        
-
     }
 
 
