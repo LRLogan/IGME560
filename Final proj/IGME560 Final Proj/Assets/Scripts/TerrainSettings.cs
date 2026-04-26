@@ -13,6 +13,7 @@ public class TerrainSettings : MonoBehaviour
     public int seed = 42;
 
     [Header("fBm Settings")]
+
     // Higher persistence leads to more frequency contribution (more detail)
     [Range(0f, 1f)] public float persistence = 0.6f;
 
@@ -38,6 +39,13 @@ public class TerrainSettings : MonoBehaviour
     public float cliffStart = 0.7f;
     public float cliffEnd = 0.8f;
     public float cliffStrength = 50f;
+
+    [Header("Tree placement settings")]
+    public float treeNoiseFrequency = 20f;
+    public int treeDensityMod = 2;
+
+    // This value squared will be the grid size of the tree overlay noise
+    public int treeNoiseTerrainRatio = 4; 
 
     public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }
