@@ -23,6 +23,9 @@ public class TreeGen : MonoBehaviour
     private float angleToUse = 25f;
     private int iterations = 4;
 
+    // ---------------------------------
+
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public void StartFullTreeGenSeq()
     {
@@ -171,8 +174,8 @@ public class TreeGen : MonoBehaviour
     private void CreateTree(int iterations, Vector3 placePos)
     {
         // Build the tree rules
-        StringBuilder curRule = startRule;
-        for(int i = 0; i < iterations; i++)
+        StringBuilder curRule = new StringBuilder(startRule.ToString());
+        for (int i = 0; i < iterations; i++)
         {
             for(int j = 0; j < curRule.Length; j++)
             {
@@ -184,7 +187,7 @@ public class TreeGen : MonoBehaviour
         rulesToDo = curRule;
 
         // Lastly finish decoding the rules and place the tree
-        Dispatch();
+        Dispatch(placePos);
     }
 
     /// <summary>
@@ -199,35 +202,81 @@ public class TreeGen : MonoBehaviour
     /// <summary>
     /// Responcible for dispatching a set of rules for constructing a tree
     /// </summary>
-    private void Dispatch()
+    private void Dispatch(Vector3 startPos)
     {
-        if (rulesToDo.Length > 0)
+        Stack<TurtleState> stack = new Stack<TurtleState>();
+
+        Vector3 pos = startPos;
+        Quaternion rot = Quaternion.identity;
+
+        List<Vector3> currentBranch = new List<Vector3>();
+        currentBranch.Add(pos);
+
+        float step = settings.branchLength;
+        float angle = angleToUse;
+        float randomYaw = UnityEngine.Random.Range(-10f, 10f);
+        rot *= Quaternion.Euler(0, angle + randomYaw, 0);
+
+        for (int i = 0; i < rulesToDo.Length; i++)
         {
-            string buffer = rulesToDo[0].ToString();
+            char c = rulesToDo[i];
 
-            switch (buffer)
+            switch (c)
             {
-                case "-":
+                case 'F':
+                    {
+                        Vector3 newPos = pos + rot * Vector3.up * step;
 
+                        currentBranch.Add(newPos);
+
+                        // DEBUG (temporary)
+                        Debug.DrawLine(pos, newPos, Color.green, 100f);
+
+                        pos = newPos;
+                        break;
+                    }
+
+                case '+':
+                    rot *= Quaternion.Euler(0, angle, 0);
                     break;
 
-                case "+":
-
+                case '-':
+                    rot *= Quaternion.Euler(0, -angle, 0);
                     break;
 
-                case "F":
-
+                case '&':
+                    rot *= Quaternion.Euler(angle, 0, 0);
                     break;
 
-                case "[":
-
+                case '^':
+                    rot *= Quaternion.Euler(-angle, 0, 0);
                     break;
 
-                case "]":
+                case '[':
+                    stack.Push(new TurtleState { position = pos, rotation = rot });
 
+                    // start new branch spline
+                    currentBranch = new List<Vector3>();
+                    currentBranch.Add(pos);
+                    break;
+
+                case ']':
+                    if (stack.Count > 0)
+                    {
+                        var state = stack.Pop();
+                        pos = state.position;
+                        rot = state.rotation;
+
+                        // start new branch again
+                        currentBranch = new List<Vector3>();
+                        currentBranch.Add(pos);
+                    }
                     break;
             }
         }
+
+        // TODO: convert stored branches into splines here
+
     }
 
     /// <summary>
@@ -247,4 +296,10 @@ public class TreeGen : MonoBehaviour
 
 
 
+}
+
+struct TurtleState
+{
+    public Vector3 position;
+    public Quaternion rotation;
 }

@@ -52,7 +52,10 @@ public class TerrainSettings : MonoBehaviour
     public int treeSpacingRadius = 2;
 
     // This value squared will be the grid size of the tree overlay noise
-    public int treeNoiseTerrainRatio = 4; 
+    public int treeNoiseTerrainRatio = 4;
+
+    [Header("Tree settings")]
+    public float branchLength = 2;
 
     public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }
