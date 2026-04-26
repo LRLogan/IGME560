@@ -11,7 +11,7 @@ public class TerrainGen : MonoBehaviour
     private float minHeight = float.MaxValue;
     private float maxHeight = float.MinValue;
 
-    private void Start()
+    public void StartFullTerrainSeq()
     {
         // Placing terrain in center
         this.gameObject.transform.position = new Vector3(-settings.size / 2, 0, -settings.size / 2);
@@ -386,6 +386,9 @@ public class TerrainGen : MonoBehaviour
         e.y += 90.0f * c.y * e.y;
         e.z += 90.0f * c.y * e.z;
 
+        e.y /= 2000.0f;
+        e.z /= 2000.0f;
+
         // Compute slope BEFORE normalization
         float slope = Mathf.Sqrt(e.y * e.y + e.z * e.z);
 
@@ -470,6 +473,7 @@ public class TerrainGen : MonoBehaviour
 
                 // Final scaling
                 float finalHeight = shapedHeight * settings.heightMultiplier;
+                heightMap[x, z].height = finalHeight;
 
                 // Cliff scaling
                 float cliffMask = Smoothstep(settings.cliffStart, settings.cliffEnd, normalizedHeight);

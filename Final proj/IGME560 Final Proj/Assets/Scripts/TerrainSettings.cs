@@ -40,9 +40,16 @@ public class TerrainSettings : MonoBehaviour
     public float cliffEnd = 0.8f;
     public float cliffStrength = 50f;
 
-    [Header("Tree placement settings")]
-    public float treeNoiseFrequency = 20f;
-    public int treeDensityMod = 2;
+    [Header("Tree Placement")]
+    public float treeNoiseFrequency = 0.1f;
+    public int treeDensityMod = 5;
+
+    public float maxTreeSlope = 0.4f;
+    public float minTreeHeight = 550f;
+    public float maxTreeHeight = 750f;
+
+    public float minNormalY = 0.7f;
+    public int treeSpacingRadius = 2;
 
     // This value squared will be the grid size of the tree overlay noise
     public int treeNoiseTerrainRatio = 4; 

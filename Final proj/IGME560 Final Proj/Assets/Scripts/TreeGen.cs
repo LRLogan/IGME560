@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -18,11 +19,14 @@ public class TreeGen : MonoBehaviour
     public GameObject tempTreeObj;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public void StartFullTreeGenSeq()
     {
         terrainGen = FindFirstObjectByType<TerrainGen>();
         heightMap = terrainGen.heightMap;
-        treeOverlayNoise = new float[heightMap.GetLength(0), heightMap.GetLength(1)];
+        treeOverlayNoise = new float[heightMap.GetLength(0) / settings.treeNoiseTerrainRatio,
+            heightMap.GetLength(1) / settings.treeNoiseTerrainRatio];
+
+        SurveyGrid();
     }
 
     /// <summary>
@@ -35,22 +39,31 @@ public class TreeGen : MonoBehaviour
         // Depending on the value of the overlay grid we will know how dense that area should be
         // Lastly we can create and place the tree based on the terrain grid and its point data
 
+        int size;
+        int startZ;
+        int startX;
+
         // Iterate terrain size / ratio to obtain the correct size of the overlay grid
-        for(int i = 0; i < heightMap.GetLength(0) / settings.treeNoiseTerrainRatio; i++)
+        for (int i = 0; i < heightMap.GetLength(0) / settings.treeNoiseTerrainRatio; i++)
         {
             for (int j = 0; j < heightMap.GetLength(1) / settings.treeNoiseTerrainRatio; j++)
             {
                 // Store the noise value
-                treeOverlayNoise[i,j] = Mathf.PerlinNoise(i * settings.treeNoiseFrequency, j * settings.treeNoiseFrequency);
+                float noise = Mathf.PerlinNoise(
+                    i * settings.treeNoiseFrequency, 
+                    j * settings.treeNoiseFrequency);
 
                 // convert the noise value to a solid itaration number and include the density modifier
-                int iterate = (int)(treeOverlayNoise[i, j] * settings.treeDensityMod);
+                int attempts = Mathf.RoundToInt(noise * settings.treeDensityMod);
 
                 // Create that amount of trees in the respective sector on the terrainGrid
-                for(int t = 0; t < iterate; t++)
+                for (int t = 0; t < attempts; t++)
                 {
+                    startX = i * settings.treeNoiseTerrainRatio;
+                    startZ = j * settings.treeNoiseTerrainRatio;
+                    size = settings.treeNoiseTerrainRatio;
                     // Get an unoccupied locatiojn on the terrain grid and place a tree on it
-
+                    TryPlaceTreeInCell(i, j);
                 }
 
             }
@@ -59,9 +72,84 @@ public class TreeGen : MonoBehaviour
 
     }
 
-    private void SpawnTempOnj(Vector3 placePos)
+    private void TryPlaceTreeInCell(int i, int j)
     {
-        Instantiate(tempTreeObj, placePos, Quaternion.identity);
+        int cellSize = settings.treeNoiseTerrainRatio;
+
+        int baseX = i * cellSize;
+        int baseZ = j * cellSize;
+
+        // random point inside the cell
+        int x = baseX + UnityEngine.Random.Range(0, cellSize);
+        int z = baseZ + UnityEngine.Random.Range(0, cellSize);
+
+        if (!IsValidTreeLocation(x, z)) return;
+
+        PlaceTree(x, z);
+    }
+
+    private bool IsValidTreeLocation(int x, int z)
+    {
+        TerrainPointData p = heightMap[x, z];
+
+        // 1. Occupancy check
+        if (p.isOccupied) return false;
+
+        // Slope check
+        if (p.slope > settings.maxTreeSlope) return false;
+
+        // Height band (could be used for biome control in future)
+        //if (p.height < settings.minTreeHeight || p.height > settings.maxTreeHeight)
+            //return false;
+
+        // Normal check 
+        if (p.normal.y < settings.minNormalY) return false;
+
+        // Nearby tree check
+        if (HasNearbyTree(x, z, settings.treeSpacingRadius)) return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Currently checks for nearby tree but could be anuthing that is occupying the space
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="z"></param>
+    /// <param name="radius"></param>
+    /// <returns></returns>
+    private bool HasNearbyTree(int x, int z, int radius)
+    {
+        for (int dx = -radius; dx <= radius; dx++)
+        {
+            for (int dz = -radius; dz <= radius; dz++)
+            {
+                int nx = x + dx;
+                int nz = z + dz;
+
+                if (nx < 0 || nz < 0 || nx >= heightMap.GetLength(0) || nz >= heightMap.GetLength(1))
+                    continue;
+
+                if (heightMap[nx, nz].isOccupied)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void PlaceTree(int x, int z)
+    {
+        TerrainPointData p = heightMap[x, z];
+
+        Vector3 pos = new Vector3(x, p.height, z);
+
+        // Swap out for CreateTree when ready 
+        Instantiate(tempTreeObj, AdjustPosToTerrain(pos), Quaternion.identity);
+
+        // mark occupied
+        p.isOccupied = true;
+        p.status = "tree";
     }
 
     /// <summary>
@@ -71,7 +159,7 @@ public class TreeGen : MonoBehaviour
     /// <param name="placePos">position on terrain</param>
     private void CreateTree(int iterations, Vector3 placePos)
     {
-        // Build the tree
+        // Build the tree rules
         StringBuilder curRule = startRule;
         for(int i = 0; i < iterations; i++)
         {
@@ -84,7 +172,8 @@ public class TreeGen : MonoBehaviour
         }
         rulesToDo = curRule;
 
-        // Lastly place the tree
+        // Lastly finish decoding the rules and place the tree
+        Dispatch();
     }
 
     /// <summary>
@@ -131,7 +220,13 @@ public class TreeGen : MonoBehaviour
     }
 
 
-
+    private Vector3 AdjustPosToTerrain(Vector3 pos)
+    {
+        return new Vector3(
+            pos.x - settings.size / 2,
+            pos.y,
+            pos.z - settings.size / 2);
+    }
 
 
 
