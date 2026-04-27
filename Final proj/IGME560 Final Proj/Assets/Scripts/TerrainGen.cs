@@ -338,7 +338,7 @@ public class TerrainGen : MonoBehaviour
         // Cliff shaping
         e += 90.0f * Mathf.SmoothStep(552.0f, 594.0f, e);
 
-        // Slope calculation 
+        // Slope calculation  ---
         float eps = 0.01f;
 
         float hx = generateFBM(baseCoord + new Vector2(eps, 0), 6);
@@ -353,47 +353,85 @@ public class TerrainGen : MonoBehaviour
         float slope = Mathf.Sqrt(dx * dx + dz * dz);
 
         float a = Mathf.Clamp01(slope * settings.slopeScale);
+        // ------------------
 
         return new TerrainPointData(e, a);
     }
 
+    // The big differenced between these 2 methods (above and below) is that the second is more
+    // mathomaticallly correct and applys the chain rule with the domain warp correctly however at this state
+    // the mehtod above is tuned in settings better
+
     /// <summary>
-    /// Not used at the moment but can give back a derrivative along with the height info
+    /// New TerrainMapD fn with added capability to be tuned better
     /// </summary>
     /// <param name="p"></param>
+    /// <param name="settings"></param>
     /// <returns></returns>
     public static TerrainPointData TerrainMapD(Vector2 p, TerrainSettings settings)
     {
         Vector2 pScaled = p * settings.frequencyScale;
 
-        Vector2 samplePoint = settings.useDomainWarping
-            ? DomainWarp(pScaled)
-            : pScaled;
+        // --- DOMAIN WARP (must be consistent for derivatives too) ---
+        Vector2 samplePoint;
+        Vector2 warpDx = Vector2.zero;
+        Vector2 warpDz = Vector2.zero;
+
+        if (settings.useDomainWarping)
+        {
+            // You NEED a derivative version of warp for correctness
+            // If you don't have one, fallback safely:
+            samplePoint = DomainWarp(pScaled);
+
+            // Approximate warp derivatives (cheap fallback)
+            float eps = 0.01f;
+            warpDx = (DomainWarp(pScaled + new Vector2(eps, 0)) - samplePoint) / eps;
+            warpDz = (DomainWarp(pScaled + new Vector2(0, eps)) - samplePoint) / eps;
+        }
+        else
+        {
+            samplePoint = pScaled;
+            warpDx = new Vector2(1, 0);
+            warpDz = new Vector2(0, 1);
+        }
 
         Vector2 baseCoord = samplePoint / 2000.0f + new Vector2(1.0f, -2.0f);
 
+        // --- FBM WITH DERIVATIVES ---
         Vector3 e = generateFBMWithD(baseCoord, 6);
+        // e = (height, d/dx, d/dz) in baseCoord space
 
-        // Apply height scaling
+        // --- SCALE HEIGHT + DERIVATIVES ---
         e.x = 600.0f * e.x + 600.0f;
         e.y *= 600.0f;
         e.z *= 600.0f;
 
-        // Cliff shaping with derivative
+        // --- CLIFF SHAPING WITH CHAIN RULE ---
         Vector2 c = SmoothstepD(552.0f, 594.0f, e.x);
 
+        // Height
         e.x += 90.0f * c.x;
+
+        // Derivatives (chain rule!)
         e.y += 90.0f * c.y * e.y;
         e.z += 90.0f * c.y * e.z;
 
-        e.y /= 2000.0f;
-        e.z /= 2000.0f;
+        // --- DOMAIN SCALE CORRECTION ---
+        // Because baseCoord = samplePoint / 2000
+        float domainScale = 1.0f / 2000.0f;
 
-        // Compute slope BEFORE normalization
-        float slope = Mathf.Sqrt(e.y * e.y + e.z * e.z);
+        // Apply warp derivative influence
+        Vector2 dPdx = warpDx * domainScale;
+        Vector2 dPdz = warpDz * domainScale;
 
-        // Compute normal AFTER slope
-        Vector3 normal = new Vector3(-e.y, 1.0f, -e.z).normalized;
+        float dx = e.y * dPdx.x + e.z * dPdx.y;
+        float dz = e.y * dPdz.x + e.z * dPdz.y;
+
+        // --- FINAL SLOPE ---
+        float slope = Mathf.Sqrt(dx * dx + dz * dz);
+
+        // --- NORMAL ---
+        Vector3 normal = new Vector3(-dx, 1.0f, -dz).normalized;
 
         return new TerrainPointData(e.x, slope, normal);
     }
