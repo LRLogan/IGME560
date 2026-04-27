@@ -12,9 +12,13 @@ public class SimManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        FullRegen();
+    }
+
+    public void FullRegen()
+    {
         terrainGen.StartFullTerrainSeq();
         treeGen.StartFullTreeGenSeq();
     }
-
 
 }
