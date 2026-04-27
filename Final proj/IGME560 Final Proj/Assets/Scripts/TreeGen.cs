@@ -17,6 +17,7 @@ public class TreeGen : MonoBehaviour
     private TerrainPointData[,] heightMap;
     private float[,] treeOverlayNoise;
     [SerializeField] private TerrainSettings settings;
+    [SerializeField] private Transform treeParent;
 
     // Temp vars while trees are not done
     public GameObject tempTreeObj;
@@ -159,7 +160,8 @@ public class TreeGen : MonoBehaviour
         Vector3 pos = new Vector3(x, p.height, z);
 
         // Swap out for CreateTree when ready 
-        Instantiate(tempTreeObj, AdjustPosToTerrain(pos), Quaternion.identity);
+        Instantiate(tempTreeObj, AdjustPosToTerrain(pos), Quaternion.identity, treeParent);
+        
 
         // mark occupied
         p.isOccupied = true;
