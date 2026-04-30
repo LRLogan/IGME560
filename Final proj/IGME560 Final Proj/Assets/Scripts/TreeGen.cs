@@ -1,3 +1,4 @@
+using Palmmedia.ReportGenerator.Core.Parser.Analysis;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -230,14 +231,14 @@ public class TreeGen : MonoBehaviour
             switch (c)
             {
                 case 'F':
-                    {
-                        Vector3 newPos = pos + rot * Vector3.forward * step;
+                
+                   Vector3 newPos = pos + rot *Vector3.forward *step;
 
-                        currentBranch.points.Add(newPos);
+                   currentBranch.points.Add(newPos);
 
-                        pos = newPos;
-                        break;
-                    }
+                   pos = newPos;
+                   break;
+                
 
                 case '+':
                     rot *= Quaternion.Euler(0, angle, 0);
@@ -264,51 +265,51 @@ public class TreeGen : MonoBehaviour
                     break;
 
                 case '[':
-                    {
-                        // Save state
-                        stack.Push(new TurtleState
-                        {
-                            position = pos,
-                            rotation = rot,
-                            depth = depth
-                        });
+                
+                   stack.Push(new TurtleState
+                   {
+                       position = pos,
+                       rotation = rot,
+                       depth = depth
+                   });
 
-                        // Store current branch
-                        branches.Add(currentBranch);
+                   // Store current branch BEFORE splitting
+                   branches.Add(currentBranch);
 
-                        // Start new branch
-                        depth++;
+                   depth++;
 
-                        currentBranch = new Branch();
-                        currentBranch.points.Add(pos);
+                   // NEW BRANCH STARTS FROM CURRENT POSITION
+                   currentBranch = new Branch();
+                   currentBranch.points.Add(pos);
+                   currentBranch.hasParent = true;
+                   currentBranch.parentPoint = pos;
 
-                        // Taper thickness
-                        currentBranch.rad = settings.baseBranchRadius *
-                            Mathf.Pow(settings.radiusFalloff, depth);
+                   currentBranch.rad =settings.baseBranchRadius *
+                       Mathf.Pow(settings.radiusFalloff,depth);
 
-                        break;
-                    }
+                    break;
 
                 case ']':
+                
+                    if (stack.Count > 0)
                     {
-                        if (stack.Count > 0)
-                        {
-                            // Store finished branch
-                            branches.Add(currentBranch);
+                        branches.Add(currentBranch);
 
-                            var state = stack.Pop();
-                            pos = state.position;
-                            rot = state.rotation;
-                            depth = state.depth;
+                        var state = stack.Pop();
+                        pos = state.position;
+                        rot = state.rotation;
+                        depth = state.depth;
 
-                            // Resume previous branch
-                            currentBranch = new Branch();
-                            currentBranch.points.Add(pos);
-                            currentBranch.rad = settings.baseBranchRadius *
-                                Mathf.Pow(settings.radiusFalloff, depth);
-                        }
-                        break;
+                        // Resume trunk/parent branch
+                        currentBranch = new Branch();
+                        currentBranch.points.Add(pos);
+                        currentBranch.hasParent = false;
+
+                        currentBranch.rad=settings.baseBranchRadius *
+                            Mathf.Pow(settings.radiusFalloff,depth);
                     }
+                    break;
+                
             }
         }
 
@@ -318,6 +319,10 @@ public class TreeGen : MonoBehaviour
         BuildSplines(branches);
     }
 
+    /// <summary>
+    /// Builds the underlying splines for the trees
+    /// </summary>
+    /// <param name="branches"></param>
     private void BuildSplines(List<Branch> branches)
     {
         GameObject treeGO = new GameObject("Tree");
@@ -325,7 +330,7 @@ public class TreeGen : MonoBehaviour
 
         var splineContainer = treeGO.AddComponent<SplineContainer>();
 
-        foreach (var branch in branches)
+        foreach (Branch branch in branches)
         {
             if (branch.points.Count < 2) continue;
 
@@ -340,11 +345,17 @@ public class TreeGen : MonoBehaviour
             splineContainer.AddSpline(spline);
 
             // Store thickness (we’ll use this next)
-            AttachBranchRenderer(treeGO, spline, branch.rad);
+            AttachBranchRenderer(treeGO, spline, branch.points, branch.rad);
         }
     }
 
-    private void AttachBranchRenderer(GameObject treeGO, Spline spline, float radius)
+    /// <summary>
+    /// Helper function to attach needed components to the tree parts. Applys changes to a single tree part
+    /// </summary>
+    /// <param name="treeGO"></param>
+    /// <param name="spline"></param>
+    /// <param name="radius"></param>
+    private void AttachBranchRenderer(GameObject treeGO, Spline spline, List<Vector3> branchPoints, float radius)
     {
         GameObject branchGO = new GameObject("Branch");
         branchGO.transform.parent = treeGO.transform;
@@ -354,46 +365,68 @@ public class TreeGen : MonoBehaviour
 
         meshRenderer.material = settings.branchMaterial;
 
-        meshFilter.mesh = GenerateTubeMesh(spline, radius);
+        meshFilter.mesh = GenerateTubeMesh(branchPoints, radius);
     }
 
-    private Mesh GenerateTubeMesh(Spline spline, float radius)
+    /// <summary>
+    /// Generates the external mesh of a tree part
+    /// </summary>
+    /// <param name="spline"></param>
+    /// <param name="radius"></param>
+    /// <returns></returns>
+    private Mesh GenerateTubeMesh(List<Vector3> points, float radius)
     {
-        int resolution = 8;
-        int segments = spline.Count;
+        int radialSegments = 6;
 
         List<Vector3> verts = new List<Vector3>();
         List<int> tris = new List<int>();
 
-        for (int i = 0; i < segments; i++)
+        if (points.Count < 2) return null;
+
+        Vector3 prevForward = (points[1] - points[0]).normalized;
+
+        for (int i = 0; i < points.Count; i++)
         {
-            Vector3 center = spline[i].Position;
-            Vector3 forward = Vector3.forward;
+            Vector3 center = points[i];
 
-            if (i < segments - 1)
-                forward = ((Vector3)spline[i + 1].Position - center).normalized;
+            Vector3 forward;
 
-            Quaternion rot = Quaternion.LookRotation(forward);
+            if (i == points.Count - 1)
+                forward = prevForward;
+            else
+                forward = (points[i + 1] - center).normalized;
 
-            for (int j = 0; j < resolution; j++)
+            // Stabilize rotation (prevents twisting)
+            Quaternion rot = Quaternion.LookRotation(forward, Vector3.up);
+
+            prevForward = forward;
+
+            for (int j = 0; j < radialSegments; j++)
             {
-                float angle = (j / (float)resolution) * Mathf.PI * 2f;
-                Vector3 local = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * radius;
+                float angle = (j / (float)radialSegments) * Mathf.PI * 2f;
+
+                Vector3 local = new Vector3(
+                    Mathf.Cos(angle),
+                    Mathf.Sin(angle),
+                    0
+                ) * radius;
+
                 verts.Add(center + rot * local);
             }
         }
 
-        for (int i = 0; i < segments - 1; i++)
+        // Creating the tris
+        for (int i = 0; i < points.Count - 1; i++)
         {
-            int ringStart = i * resolution;
-            int nextRing = (i + 1) * resolution;
+            int ringStart = i * radialSegments;
+            int nextRing = (i + 1) * radialSegments;
 
-            for (int j = 0; j < resolution; j++)
+            for (int j = 0; j < radialSegments; j++)
             {
-                int a = ringStart + j;
-                int b = ringStart + (j + 1) % resolution;
-                int c = nextRing + j;
-                int d = nextRing + (j + 1) % resolution;
+                int b = ringStart + j;
+                int a = ringStart + (j + 1) % radialSegments;
+                int d = nextRing + j;
+                int c = nextRing + (j + 1) % radialSegments;
 
                 tris.Add(a); tris.Add(c); tris.Add(b);
                 tris.Add(b); tris.Add(c); tris.Add(d);
@@ -438,4 +471,6 @@ public class Branch
 {
     public List<Vector3> points = new();
     public float rad;
+    public Vector3 parentPoint; // Maybe change this to a Branch ref
+    public bool hasParent;
 }
