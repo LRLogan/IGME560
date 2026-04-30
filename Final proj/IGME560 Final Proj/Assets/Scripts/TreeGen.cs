@@ -1,12 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Text;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Splines;
 using UnityEngine.UIElements;
-using System.IO;
-using System.Text;
 
 public class TreeGen : MonoBehaviour
 {
@@ -208,14 +209,19 @@ public class TreeGen : MonoBehaviour
     private void Dispatch(Vector3 startPos)
     {
         Stack<TurtleState> stack = new Stack<TurtleState>();
+        List<Branch> branches = new List<Branch>();
 
         Vector3 pos = startPos;
-
-        // Start pointing UP (critical for trees)
         Quaternion rot = Quaternion.LookRotation(Vector3.up);
 
         float step = settings.branchLength;
         float angle = angleToUse;
+
+        int depth = 0;
+
+        Branch currentBranch = new Branch();
+        currentBranch.points.Add(pos);
+        currentBranch.rad = settings.baseBranchRadius;
 
         for (int i = 0; i < rulesToDo.Length; i++)
         {
@@ -227,13 +233,12 @@ public class TreeGen : MonoBehaviour
                     {
                         Vector3 newPos = pos + rot * Vector3.forward * step;
 
-                        Debug.DrawLine(pos, newPos, Color.green, 100f);
+                        currentBranch.points.Add(newPos);
 
                         pos = newPos;
                         break;
                     }
 
-                // Yaw (left/right)
                 case '+':
                     rot *= Quaternion.Euler(0, angle, 0);
                     break;
@@ -242,7 +247,6 @@ public class TreeGen : MonoBehaviour
                     rot *= Quaternion.Euler(0, -angle, 0);
                     break;
 
-                // Pitch (up/down branching)
                 case '&':
                     rot *= Quaternion.Euler(angle, 0, 0);
                     break;
@@ -251,7 +255,6 @@ public class TreeGen : MonoBehaviour
                     rot *= Quaternion.Euler(-angle, 0, 0);
                     break;
 
-                // Roll (adds natural variation)
                 case '\\':
                     rot *= Quaternion.Euler(0, 0, angle);
                     break;
@@ -261,25 +264,148 @@ public class TreeGen : MonoBehaviour
                     break;
 
                 case '[':
-                    stack.Push(new TurtleState
                     {
-                        position = pos,
-                        rotation = rot
-                    });
-                    break;
+                        // Save state
+                        stack.Push(new TurtleState
+                        {
+                            position = pos,
+                            rotation = rot,
+                            depth = depth
+                        });
+
+                        // Store current branch
+                        branches.Add(currentBranch);
+
+                        // Start new branch
+                        depth++;
+
+                        currentBranch = new Branch();
+                        currentBranch.points.Add(pos);
+
+                        // Taper thickness
+                        currentBranch.rad = settings.baseBranchRadius *
+                            Mathf.Pow(settings.radiusFalloff, depth);
+
+                        break;
+                    }
 
                 case ']':
-                    if (stack.Count > 0)
                     {
-                        var state = stack.Pop();
-                        pos = state.position;
-                        rot = state.rotation;
+                        if (stack.Count > 0)
+                        {
+                            // Store finished branch
+                            branches.Add(currentBranch);
+
+                            var state = stack.Pop();
+                            pos = state.position;
+                            rot = state.rotation;
+                            depth = state.depth;
+
+                            // Resume previous branch
+                            currentBranch = new Branch();
+                            currentBranch.points.Add(pos);
+                            currentBranch.rad = settings.baseBranchRadius *
+                                Mathf.Pow(settings.radiusFalloff, depth);
+                        }
+                        break;
                     }
-                    break;
             }
         }
 
-        // Convert into splines here
+        // Add last branch
+        branches.Add(currentBranch);
+
+        BuildSplines(branches);
+    }
+
+    private void BuildSplines(List<Branch> branches)
+    {
+        GameObject treeGO = new GameObject("Tree");
+        treeGO.transform.parent = treeParent;
+
+        var splineContainer = treeGO.AddComponent<SplineContainer>();
+
+        foreach (var branch in branches)
+        {
+            if (branch.points.Count < 2) continue;
+
+            Spline spline = new Spline();
+
+            for (int i = 0; i < branch.points.Count; i++)
+            {
+                BezierKnot knot = new BezierKnot(branch.points[i]);
+                spline.Add(knot);
+            }
+
+            splineContainer.AddSpline(spline);
+
+            // Store thickness (we’ll use this next)
+            AttachBranchRenderer(treeGO, spline, branch.rad);
+        }
+    }
+
+    private void AttachBranchRenderer(GameObject treeGO, Spline spline, float radius)
+    {
+        GameObject branchGO = new GameObject("Branch");
+        branchGO.transform.parent = treeGO.transform;
+
+        var meshFilter = branchGO.AddComponent<MeshFilter>();
+        var meshRenderer = branchGO.AddComponent<MeshRenderer>();
+
+        meshRenderer.material = settings.branchMaterial;
+
+        meshFilter.mesh = GenerateTubeMesh(spline, radius);
+    }
+
+    private Mesh GenerateTubeMesh(Spline spline, float radius)
+    {
+        int resolution = 8;
+        int segments = spline.Count;
+
+        List<Vector3> verts = new List<Vector3>();
+        List<int> tris = new List<int>();
+
+        for (int i = 0; i < segments; i++)
+        {
+            Vector3 center = spline[i].Position;
+            Vector3 forward = Vector3.forward;
+
+            if (i < segments - 1)
+                forward = ((Vector3)spline[i + 1].Position - center).normalized;
+
+            Quaternion rot = Quaternion.LookRotation(forward);
+
+            for (int j = 0; j < resolution; j++)
+            {
+                float angle = (j / (float)resolution) * Mathf.PI * 2f;
+                Vector3 local = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * radius;
+                verts.Add(center + rot * local);
+            }
+        }
+
+        for (int i = 0; i < segments - 1; i++)
+        {
+            int ringStart = i * resolution;
+            int nextRing = (i + 1) * resolution;
+
+            for (int j = 0; j < resolution; j++)
+            {
+                int a = ringStart + j;
+                int b = ringStart + (j + 1) % resolution;
+                int c = nextRing + j;
+                int d = nextRing + (j + 1) % resolution;
+
+                tris.Add(a); tris.Add(c); tris.Add(b);
+                tris.Add(b); tris.Add(c); tris.Add(d);
+            }
+        }
+
+        Mesh mesh = new Mesh();
+        mesh.SetVertices(verts);
+        mesh.SetTriangles(tris, 0);
+        mesh.RecalculateNormals();
+
+        return mesh;
     }
 
     /// <summary>
@@ -301,8 +427,15 @@ public class TreeGen : MonoBehaviour
 
 }
 
-struct TurtleState
+public struct TurtleState
 {
     public Vector3 position;
     public Quaternion rotation;
+    public int depth; 
+}
+
+public class Branch
+{
+    public List<Vector3> points = new();
+    public float rad;
 }

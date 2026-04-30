@@ -55,7 +55,10 @@ public class TerrainSettings : MonoBehaviour
     public int treeNoiseTerrainRatio = 4;
 
     [Header("Tree settings")]
-    public float branchLength = 2;
+    public float branchLength = 0.5f;
+    public float baseBranchRadius = 0.2f;
+    public float radiusFalloff = 0.7f;
+    public Material branchMaterial;
 
     public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }
