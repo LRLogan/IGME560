@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Text;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -79,7 +78,7 @@ public class TreeGen : MonoBehaviour
                     startX = i * settings.treeNoiseTerrainRatio;
                     startZ = j * settings.treeNoiseTerrainRatio;
                     size = settings.treeNoiseTerrainRatio;
-                    // Get an unoccupied locatiojn on the terrain grid and place a tree on it
+                    // Get an unoccupied location on the terrain grid and place a tree on it
                     TryPlaceTreeInCell(i, j);
                 }
 
@@ -316,20 +315,24 @@ public class TreeGen : MonoBehaviour
         // Add last branch
         branches.Add(currentBranch);
 
-        BuildSplines(branches);
+        BuildTree(branches);
     }
 
     /// <summary>
     /// Builds the underlying splines for the trees
     /// </summary>
     /// <param name="branches"></param>
-    private void BuildSplines(List<Branch> branches)
+    private void BuildTree(List<Branch> branches)
     {
         GameObject treeGO = new GameObject("Tree");
         treeGO.transform.parent = treeParent;
+        //treeGO.AddComponent<MeshFilter>();
+        //treeGO.AddComponent<MeshRenderer>();
 
-        var splineContainer = treeGO.AddComponent<SplineContainer>();
+        SplineContainer splineContainer = treeGO.AddComponent<SplineContainer>();
+        //CombineInstance[] instances = new CombineInstance[branches.Count];
 
+        //int b = 0;
         foreach (Branch branch in branches)
         {
             if (branch.points.Count < 2) continue;
@@ -345,7 +348,23 @@ public class TreeGen : MonoBehaviour
             splineContainer.AddSpline(spline);
 
             // Store thickness (we’ll use this next)
-            AttachBranchRenderer(treeGO, spline, branch.points, branch.rad);
+            // Attach the needed components and build the mesh 
+            GameObject tempBranch = AttachBranchRenderer(treeGO, spline, branch.points, branch.rad);
+
+            // Combining meshes for the tree into 1
+            //MeshFilter branchMF = tempBranch.GetComponent<MeshFilter>();
+            //instances[b] = new CombineInstance
+            //{
+            //    mesh = branchMF.sharedMesh,
+            //    transform = branchMF.transform.localToWorldMatrix
+            //};
+            //branchMF.gameObject.SetActive(false);
+            //Mesh combinedMesh = new Mesh();
+            //combinedMesh.CombineMeshes(instances);
+            //treeGO.GetComponent<MeshFilter>().sharedMesh = combinedMesh;
+            //treeGO.SetActive(true);
+            //
+            //b++;
         }
     }
 
@@ -355,7 +374,7 @@ public class TreeGen : MonoBehaviour
     /// <param name="treeGO"></param>
     /// <param name="spline"></param>
     /// <param name="radius"></param>
-    private void AttachBranchRenderer(GameObject treeGO, Spline spline, List<Vector3> branchPoints, float radius)
+    private GameObject AttachBranchRenderer(GameObject treeGO, Spline spline, List<Vector3> branchPoints, float radius)
     {
         GameObject branchGO = new GameObject("Branch");
         branchGO.transform.parent = treeGO.transform;
@@ -365,7 +384,10 @@ public class TreeGen : MonoBehaviour
 
         meshRenderer.material = settings.branchMaterial;
 
+        // After this the mech will be created in the world
         meshFilter.mesh = GenerateTubeMesh(branchPoints, radius);
+
+        return branchGO;
     }
 
     /// <summary>
