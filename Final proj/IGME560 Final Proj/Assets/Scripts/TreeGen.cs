@@ -187,11 +187,7 @@ public class TreeGen : MonoBehaviour
         TerrainPointData p = heightMap[x, z];
 
         Vector3 pos = new Vector3(x, p.height, z);
-
-        // Swap out for CreateTree when ready 
-        //Instantiate(tempTreeObj, AdjustPosToTerrain(pos), Quaternion.identity, treeParent);
         CreateTree(3, AdjustPosToTerrain(pos));
-        
 
         // mark occupied
         p.isOccupied = true;
@@ -274,29 +270,57 @@ public class TreeGen : MonoBehaviour
             switch (c)
             {
                 case 'F':
-                
-                   Vector3 newPos = pos + rot *Vector3.forward *step;
 
-                   currentBranch.points.Add(newPos);
+                    Vector3 dir = rot * Vector3.forward;
 
+                    // Add organic deviation
+                    dir = Quaternion.Euler(
+                        UnityEngine.Random.Range(-10f, 10f),
+                        UnityEngine.Random.Range(-10f, 10f),
+                        UnityEngine.Random.Range(-10f, 10f)
+                    ) * dir;
+
+                    // bias upward 
+                    Vector3 upBias = Vector3.up * 0.5f;
+                    dir = (dir + upBias).normalized;
+
+                    Vector3 newPos = pos + dir.normalized * step;
+
+                    currentBranch.points.Add(newPos);
                    pos = newPos;
                    break;
 
 
                 case '+':
-                    rot *= Quaternion.Euler(0, angle + UnityEngine.Random.Range(-3f, 3f), 0);
+                    rot *= Quaternion.Euler(
+                        UnityEngine.Random.Range(-5f, 5f),
+                        angle + UnityEngine.Random.Range(-10f, 10f),
+                        UnityEngine.Random.Range(-5f, 5f)
+                    );
                     break;
 
                 case '-':
-                    rot *= Quaternion.Euler(0, -angle + UnityEngine.Random.Range(-3f, 3f), 0);
+                    rot *= Quaternion.Euler(
+                        UnityEngine.Random.Range(-5f, 5f),
+                        -angle + UnityEngine.Random.Range(-10f, 10f),
+                        UnityEngine.Random.Range(-5f, 5f)
+                    );
                     break;
 
                 case '&':
-                    rot *= Quaternion.Euler(angle, 0, 0);
+                    rot *= Quaternion.Euler(
+                        angle + UnityEngine.Random.Range(-8f, 8f),
+                        UnityEngine.Random.Range(-5f, 5f),
+                        0
+                    );
                     break;
 
                 case '^':
-                    rot *= Quaternion.Euler(-angle, 0, 0);
+                    rot *= Quaternion.Euler(
+                        -angle + UnityEngine.Random.Range(-8f, 8f),
+                        UnityEngine.Random.Range(-5f, 5f),
+                        0
+                    );
                     break;
 
                 case '\\':
@@ -308,29 +332,32 @@ public class TreeGen : MonoBehaviour
                     break;
 
                 case '[':
-                
-                   stack.Push(new TurtleState
-                   {
-                       position = pos,
-                       rotation = rot,
-                       depth = depth
-                   });
+                    {
+                        stack.Push(new TurtleState
+                        {
+                            position = pos,
+                            rotation = rot,
+                            depth = depth
+                        });
 
-                   // Store current branch BEFORE splitting
-                   branches.Add(currentBranch);
+                        branches.Add(currentBranch);
 
-                   depth++;
+                        depth++;
 
-                   // NEW BRANCH STARTS FROM CURRENT POSITION
-                   currentBranch = new Branch();
-                   currentBranch.points.Add(pos);
-                   currentBranch.hasParent = true;
-                   currentBranch.parentPoint = pos;
+                        // Random rotation around the cross of the cur direction
+                        float twist = UnityEngine.Random.Range(0f, 360f);
+                        rot *= Quaternion.AngleAxis(twist, rot * Vector3.right);
 
-                   currentBranch.rad =settings.baseBranchRadius *
-                       Mathf.Pow(settings.radiusFalloff,depth);
+                        currentBranch = new Branch();
+                        currentBranch.points.Add(pos);
+                        currentBranch.hasParent = true;
+                        currentBranch.parentPoint = pos;
 
-                    break;
+                        currentBranch.rad = settings.baseBranchRadius *
+                            Mathf.Pow(settings.radiusFalloff, depth);
+
+                        break;
+                    }
 
                 case ']':
                 
@@ -387,13 +414,10 @@ public class TreeGen : MonoBehaviour
 
             splineContainer.AddSpline(spline);
 
-            // Store thickness (we’ll use this next)
             // Attach the needed components and build the mesh 
             GameObject tempBranch = AttachBranchRenderer(treeGO, spline, branch.points, branch.rad);
 
         }
-        //float randomY = UnityEngine.Random.Range(0f, 360f);
-        //treeGO.transform.rotation = Quaternion.Euler(0f, randomY, 0f);
     }
 
     /// <summary>
@@ -503,9 +527,6 @@ public class TreeGen : MonoBehaviour
             pos.y,
             pos.z - settings.size / 2);
     }
-
-
-
 
 
 }
