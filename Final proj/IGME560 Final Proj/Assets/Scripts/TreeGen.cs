@@ -262,6 +262,7 @@ public class TreeGen : MonoBehaviour
         Branch currentBranch = new Branch();
         currentBranch.points.Add(pos);
         currentBranch.rad = settings.baseBranchRadius;
+        currentBranch.hasParent = false; // trunk starts with no parent
 
         for (int i = 0; i < rulesToDo.Length; i++)
         {
@@ -365,7 +366,7 @@ public class TreeGen : MonoBehaviour
                     {
                         branches.Add(currentBranch);
 
-                        var state = stack.Pop();
+                        TurtleState state = stack.Pop();
                         pos = state.position;
                         rot = state.rotation;
                         depth = state.depth;
@@ -373,7 +374,8 @@ public class TreeGen : MonoBehaviour
                         // Resume trunk/parent branch
                         currentBranch = new Branch();
                         currentBranch.points.Add(pos);
-                        currentBranch.hasParent = false;
+                        currentBranch.hasParent = true;
+                        currentBranch.parentPoint = pos;
 
                         currentBranch.rad=settings.baseBranchRadius *
                             Mathf.Pow(settings.radiusFalloff,depth);
@@ -415,7 +417,7 @@ public class TreeGen : MonoBehaviour
             splineContainer.AddSpline(spline);
 
             // Attach the needed components and build the mesh 
-            GameObject tempBranch = AttachBranchRenderer(treeGO, spline, branch.points, branch.rad);
+            GameObject tempBranch = AttachBranchRenderer(treeGO, spline, branch.points, branch.rad, branch.hasParent);
 
         }
     }
@@ -426,7 +428,7 @@ public class TreeGen : MonoBehaviour
     /// <param name="treeGO"></param>
     /// <param name="spline"></param>
     /// <param name="radius"></param>
-    private GameObject AttachBranchRenderer(GameObject treeGO, Spline spline, List<Vector3> branchPoints, float radius)
+    private GameObject AttachBranchRenderer(GameObject treeGO, Spline spline, List<Vector3> branchPoints, float radius, bool hasParent)
     {
         GameObject branchGO = new GameObject("Branch");
         branchGO.transform.parent = treeGO.transform;
@@ -437,7 +439,7 @@ public class TreeGen : MonoBehaviour
         meshRenderer.material = settings.branchMaterial;
 
         // After this the mech will be created in the world
-        meshFilter.mesh = GenerateTubeMesh(branchPoints, radius);
+        meshFilter.mesh = GenerateTubeMesh(branchPoints, radius, hasParent);
 
         return branchGO;
     }
@@ -448,7 +450,7 @@ public class TreeGen : MonoBehaviour
     /// <param name="spline"></param>
     /// <param name="radius"></param>
     /// <returns></returns>
-    private Mesh GenerateTubeMesh(List<Vector3> points, float radius)
+    private Mesh GenerateTubeMesh(List<Vector3> points, float radius, bool hasParent)
     {
         int radialSegments = 6;
 
@@ -504,6 +506,56 @@ public class TreeGen : MonoBehaviour
 
                 tris.Add(a); tris.Add(c); tris.Add(b);
                 tris.Add(b); tris.Add(c); tris.Add(d);
+            }
+        }
+
+        // ----- CAP START -----
+        bool capStart = !hasParent;
+        bool capEnd = true;
+
+        // If this branch has a parent, don't cap the base
+        // (prevents overlap at junctions)
+        if (points.Count > 0)
+        {
+            // heuristic: if first segment is very short, it's likely a continuation
+            if (points.Count > 1 && Vector3.Distance(points[0], points[1]) < 0.01f)
+                capStart = false;
+        }
+
+        int ringSize = radialSegments;
+
+        // START CAP
+        if (capStart)
+        {
+            int centerIndex = verts.Count;
+            verts.Add(points[0]);
+
+            for (int i = 0; i < ringSize; i++)
+            {
+                int a = i;
+                int b = (i + 1) % ringSize;
+
+                tris.Add(centerIndex);
+                tris.Add(b);
+                tris.Add(a);
+            }
+        }
+
+        // END CAP
+        if (capEnd)
+        {
+            int baseIndex = (points.Count - 1) * ringSize;
+            int centerIndex = verts.Count;
+            verts.Add(points[^1]);
+
+            for (int i = 0; i < ringSize; i++)
+            {
+                int a = baseIndex + i;
+                int b = baseIndex + (i + 1) % ringSize;
+
+                tris.Add(centerIndex);
+                tris.Add(a);
+                tris.Add(b);
             }
         }
 
