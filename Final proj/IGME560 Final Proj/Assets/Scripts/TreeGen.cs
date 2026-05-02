@@ -21,10 +21,16 @@ public class TreeGen : MonoBehaviour
     [SerializeField] private TerrainSettings settings;
     [SerializeField] private Transform treeParent;
 
+    // Temp leaf settings
+    [SerializeField] private GameObject leafClusterPrefab;
+    [SerializeField] private float leafSpawnChance = 0.8f;
+    [SerializeField] private float leafScale = 1f;
+
     #region L-Sys rule sets
     private List<LSystemRuleSet> ruleSets = 
         new List<LSystemRuleSet>()
         {
+            
              new LSystemRuleSet
              {
                  angle = 25f,
@@ -56,7 +62,29 @@ public class TreeGen : MonoBehaviour
                      new Rule { key = "X", value = "F[-X][X]F[-X]+FX" },
                      new Rule { key = "F", value = "FF" }
                  }
-             }
+             },
+
+             new LSystemRuleSet
+             {
+                 angle = 18f,
+                 axiom = "X",
+                 rules = new List<Rule>
+                 {
+                     new Rule { key = "X", value = "F[+X][+X][X]  FX" },
+                     new Rule { key = "F", value = "FF" }
+                 }
+             },
+
+            new LSystemRuleSet
+             {
+                 angle = 25.7f,
+                 axiom = "X",
+                 rules = new List<Rule>
+                 {
+                     new Rule { key = "X", value = "F[+X][-X]FX" },
+                     new Rule { key = "F", value = "FF" }
+                 }
+             },
         };
         #endregion
 
@@ -187,7 +215,7 @@ public class TreeGen : MonoBehaviour
         TerrainPointData p = heightMap[x, z];
 
         Vector3 pos = new Vector3(x, p.height, z);
-        CreateTree(3, AdjustPosToTerrain(pos));
+        CreateTree(settings.lSysIterations, AdjustPosToTerrain(pos));
 
         // mark occupied
         p.isOccupied = true;
@@ -282,8 +310,9 @@ public class TreeGen : MonoBehaviour
                     ) * dir;
 
                     // bias upward 
-                    Vector3 upBias = Vector3.up * 0.5f;
+                    Vector3 upBias = Vector3.up * 0.9f;
                     dir = (dir + upBias).normalized;
+                    //dir = Vector3.Lerp(dir, Vector3.up, 0.2f).normalized;
 
                     Vector3 newPos = pos + dir.normalized * step;
 
@@ -402,6 +431,20 @@ public class TreeGen : MonoBehaviour
 
         SplineContainer splineContainer = treeGO.AddComponent<SplineContainer>();
 
+        float treeBaseY = float.MaxValue;
+        float treeTopY = float.MinValue;
+
+        // Sizing up the tree
+        foreach (var b in branches)
+        {
+            foreach (var p in b.points)
+            {
+                if (p.y < treeBaseY) treeBaseY = p.y;
+                if (p.y > treeTopY) treeTopY = p.y;
+            }
+        }
+
+        // Iterate to create the spline for each branch
         foreach (Branch branch in branches)
         {
             if (branch.points.Count < 2) continue;
@@ -419,6 +462,38 @@ public class TreeGen : MonoBehaviour
             // Attach the needed components and build the mesh 
             GameObject tempBranch = AttachBranchRenderer(treeGO, spline, branch.points, branch.rad, branch.hasParent);
 
+        }   // Tree is created by now
+
+        // Once more iterate but to check for branch endpoints to add leaves
+        foreach (Branch branch in branches)
+        {
+            if (!IsTerminalBranch(branch)) continue;
+
+            float height01 = Mathf.InverseLerp(
+                treeBaseY,
+                treeTopY,
+                branch.points[^1].y
+            );
+
+            // Bias toward top (square curve)
+            float heightWeight = height01 * height01;
+
+            // Thin branches get more leaves
+            float radiusWeight = 1f - Mathf.Clamp01(branch.rad / settings.baseBranchRadius);
+
+            float spawnChance = heightWeight * 0.7f + radiusWeight * 0.3f;
+
+            // Threshold
+            if (UnityEngine.Random.value > spawnChance)
+                continue;
+
+            // Reducing leaves on trunk and other think branches
+            if (branch.rad > settings.baseBranchRadius * 0.6f)
+                continue;
+
+            Vector3 tip = branch.points[^1];
+
+            SpawnLeafCluster(tip, branch);
         }
     }
 
@@ -609,6 +684,46 @@ public class TreeGen : MonoBehaviour
     }
 
     /// <summary>
+    /// Finds if a branch is an endpoint
+    /// </summary>
+    /// <param name="b"></param>
+    /// <returns></returns>
+    private bool IsTerminalBranch(Branch b)
+    {
+        return b.points.Count > 0;
+    }
+
+    private void SpawnLeafCluster(Vector3 position, Branch branch)
+    {
+        // Create the cluster GO
+        GameObject leaf = Instantiate(
+            leafClusterPrefab,
+            position,
+            Quaternion.identity,
+            treeParent
+        );
+
+        // Orient outward from branch direction
+        Vector3 dir;
+
+        if (branch.points.Count > 1)
+            dir = (branch.points[^1] - branch.points[^2]).normalized;
+        else
+            dir = Vector3.up;
+
+        leaf.transform.rotation = Quaternion.LookRotation(dir);
+
+        // Random variation for natural spread
+        leaf.transform.Rotate(
+            UnityEngine.Random.Range(-30f, 30f),
+            UnityEngine.Random.Range(0f, 360f),
+            UnityEngine.Random.Range(-30f, 30f)
+        );
+
+        leaf.transform.localScale = Vector3.one * leafScale * UnityEngine.Random.Range(0.7f, 1.3f);
+    }
+
+    /// <summary>
     /// Accounts for the terrain offset
     /// </summary>
     /// <param name="pos"></param>
@@ -620,8 +735,6 @@ public class TreeGen : MonoBehaviour
             pos.y,
             pos.z - settings.size / 2);
     }
-
-
 }
 
 #region L-sys helper classes

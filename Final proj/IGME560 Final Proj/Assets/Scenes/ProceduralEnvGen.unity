@@ -440,17 +440,18 @@ MonoBehaviour:
   cliffEnd: 0.71
   cliffStrength: 5
   treeNoiseFrequency: 20
-  treeDensityMod: 2
+  treeDensityMod: 8
   maxTreeSlope: 0.4
   minTreeHeight: 550
   maxTreeHeight: 750
   minNormalY: 0.7
-  treeSpacingRadius: 2
-  treeNoiseTerrainRatio: 4
+  treeSpacingRadius: 1
+  treeNoiseTerrainRatio: 8
   branchLength: 0.5
-  baseBranchRadius: 0.2
-  radiusFalloff: 0.7
+  baseBranchRadius: 0.1
+  radiusFalloff: 0.6
   branchMaterial: {fileID: 2100000, guid: efe26027cacc84b409062a6cff9b90c4, type: 2}
+  lSysIterations: 3
 --- !u!1 &941970898
 GameObject:
   m_ObjectHideFlags: 0
@@ -1355,7 +1356,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings: {fileID: 446672484}
   treeParent: {fileID: 1208411077}
-  tempTreeObj: {fileID: 3189279510712546567, guid: 4a47540caab6d314f916a7d038f6b315, type: 3}
+  leafClusterPrefab: {fileID: 5808464610329989845, guid: 76adde01ad0b0aa4b8ea2cbfdb445900, type: 3}
+  leafSpawnChance: 1
+  leafScale: 0.5
 --- !u!4 &2008240942
 Transform:
   m_ObjectHideFlags: 0

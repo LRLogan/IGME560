@@ -59,6 +59,7 @@ public class TerrainSettings : MonoBehaviour
     public float baseBranchRadius = 0.2f;
     public float radiusFalloff = 0.7f;
     public Material branchMaterial;
+    public int lSysIterations = 3;
 
     public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }
