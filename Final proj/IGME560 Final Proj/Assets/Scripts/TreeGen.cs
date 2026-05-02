@@ -480,3 +480,5 @@ public class Branch
     public Vector3 parentPoint; // Maybe change this to a Branch ref
     public bool hasParent;
 }
+
+
