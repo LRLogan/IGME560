@@ -13,6 +13,7 @@ public class TreeGen : MonoBehaviour
 {
     private Hashtable ruleSet = new Hashtable(10);
     private StringBuilder rulesToDo = new StringBuilder("");    // lang in IGME540 PE
+    private float angleToUse;
     private StringBuilder startRule;
     private TerrainGen terrainGen;
     private TerrainPointData[,] heightMap;
@@ -20,12 +21,44 @@ public class TreeGen : MonoBehaviour
     [SerializeField] private TerrainSettings settings;
     [SerializeField] private Transform treeParent;
 
-    // Temp vars while trees are not done
-    public GameObject tempTreeObj;
-    private float angleToUse = 25f;
-    private int iterations = 4;
-
-    // ---------------------------------
+    #region L-Sys rule sets
+    private List<LSystemRuleSet> ruleSets = 
+        new List<LSystemRuleSet>()
+        {
+             new LSystemRuleSet
+             {
+                 angle = 25f,
+                 axiom = "X",
+                 rules = new List<Rule>
+                 {
+                     new Rule { key = "X", value = "F-[[X]+X]+F[+FX]-X" },
+                     new Rule { key = "F", value = "FF" }
+                 }
+             },
+         
+             new LSystemRuleSet
+             {
+                 angle = 20f,
+                 axiom = "X",
+                 rules = new List<Rule>
+                 {
+                     new Rule { key = "X", value = "F[+X]F[-X]+X" },
+                     new Rule { key = "F", value = "FF" }
+                 }
+             },
+         
+             new LSystemRuleSet
+             {
+                 angle = 30f,
+                 axiom = "X",
+                 rules = new List<Rule>
+                 {
+                     new Rule { key = "X", value = "F[-X][X]F[-X]+FX" },
+                     new Rule { key = "F", value = "FF" }
+                 }
+             }
+        };
+        #endregion
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -35,11 +68,6 @@ public class TreeGen : MonoBehaviour
         heightMap = terrainGen.heightMap;
         treeOverlayNoise = new float[heightMap.GetLength(0) / settings.treeNoiseTerrainRatio,
             heightMap.GetLength(1) / settings.treeNoiseTerrainRatio];
-
-        // Hard coding a starter l-sys
-        startRule = new StringBuilder("X");
-        ruleSet.Add("X", "F-[[X]+X]+F[+FX]-X");
-        ruleSet.Add("F", "FF");
 
         // Start the generation pipeline
         SurveyGrid();
@@ -177,20 +205,36 @@ public class TreeGen : MonoBehaviour
     /// <param name="placePos">position on terrain</param>
     private void CreateTree(int iterations, Vector3 placePos)
     {
-        // Build the tree rules
+        // Pick a random rule set
+        LSystemRuleSet selected = ruleSets[UnityEngine.Random.Range(0, ruleSets.Count)];
+
+        // Apply its parameters
+        angleToUse = selected.angle;
+
+        ruleSet.Clear();
+        foreach (var r in selected.rules)
+        {
+            ruleSet[r.key] = r.value;
+        }
+
+        startRule = new StringBuilder(selected.axiom);
+
+        // Expand L-System (your existing logic)
         StringBuilder curRule = new StringBuilder(startRule.ToString());
+
         for (int i = 0; i < iterations; i++)
         {
-            for(int j = 0; j < curRule.Length; j++)
+            for (int j = 0; j < curRule.Length; j++)
             {
                 string buffer = GetRule(curRule[j].ToString());
                 curRule = curRule.Replace(curRule[j].ToString(), buffer, j, 1);
                 j += buffer.Length - 1;
             }
         }
+
         rulesToDo = curRule;
 
-        // Lastly finish decoding the rules and place the tree
+        // Continue pipeline unchanged
         Dispatch(placePos);
     }
 
@@ -466,6 +510,24 @@ public class TreeGen : MonoBehaviour
 
 }
 
+#region L-sys helper classes
+[Serializable]
+public class LSystemRuleSet
+{
+    public float angle;
+    public string axiom;
+    public List<Rule> rules = new();
+}
+
+[Serializable]
+public class Rule
+{
+    public string key;
+    public string value;
+}
+#endregion
+
+#region Mesh gen helper classes
 public struct TurtleState
 {
     public Vector3 position;
@@ -480,5 +542,5 @@ public class Branch
     public Vector3 parentPoint; // Maybe change this to a Branch ref
     public bool hasParent;
 }
-
+#endregion
 
