@@ -546,6 +546,17 @@ public class TreeGen : MonoBehaviour
         return mesh;
     }
 
+    /// <summary>
+    /// Adds a cap to a branch tube
+    /// </summary>
+    /// <param name="verts"></param>
+    /// <param name="tris"></param>
+    /// <param name="center"></param>
+    /// <param name="forward"></param>
+    /// <param name="up"></param>
+    /// <param name="radius"></param>
+    /// <param name="radialSegments"></param>
+    /// <param name="invert"></param>
     private void AddCap(
     List<Vector3> verts,
     List<int> tris,
