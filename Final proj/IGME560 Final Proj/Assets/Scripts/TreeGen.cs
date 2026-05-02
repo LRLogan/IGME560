@@ -212,10 +212,10 @@ public class TreeGen : MonoBehaviour
         List<Branch> branches = new List<Branch>();
 
         Vector3 pos = startPos;
-        Quaternion rot = Quaternion.LookRotation(Vector3.up);
+        Quaternion rot = Quaternion.Euler(-90f, UnityEngine.Random.Range(0f, 360f), 90f);
 
-        float step = settings.branchLength;
-        float angle = angleToUse;
+        float angle = angleToUse + UnityEngine.Random.Range(-5f, 5f);
+        float step = settings.branchLength * UnityEngine.Random.Range(0.85f, 1.15f);
 
         int depth = 0;
 
@@ -237,14 +237,14 @@ public class TreeGen : MonoBehaviour
 
                    pos = newPos;
                    break;
-                
+
 
                 case '+':
-                    rot *= Quaternion.Euler(0, angle, 0);
+                    rot *= Quaternion.Euler(0, angle + UnityEngine.Random.Range(-3f, 3f), 0);
                     break;
 
                 case '-':
-                    rot *= Quaternion.Euler(0, -angle, 0);
+                    rot *= Quaternion.Euler(0, -angle + UnityEngine.Random.Range(-3f, 3f), 0);
                     break;
 
                 case '&':
@@ -326,13 +326,9 @@ public class TreeGen : MonoBehaviour
     {
         GameObject treeGO = new GameObject("Tree");
         treeGO.transform.parent = treeParent;
-        //treeGO.AddComponent<MeshFilter>();
-        //treeGO.AddComponent<MeshRenderer>();
 
         SplineContainer splineContainer = treeGO.AddComponent<SplineContainer>();
-        //CombineInstance[] instances = new CombineInstance[branches.Count];
 
-        //int b = 0;
         foreach (Branch branch in branches)
         {
             if (branch.points.Count < 2) continue;
@@ -351,21 +347,9 @@ public class TreeGen : MonoBehaviour
             // Attach the needed components and build the mesh 
             GameObject tempBranch = AttachBranchRenderer(treeGO, spline, branch.points, branch.rad);
 
-            // Combining meshes for the tree into 1
-            //MeshFilter branchMF = tempBranch.GetComponent<MeshFilter>();
-            //instances[b] = new CombineInstance
-            //{
-            //    mesh = branchMF.sharedMesh,
-            //    transform = branchMF.transform.localToWorldMatrix
-            //};
-            //branchMF.gameObject.SetActive(false);
-            //Mesh combinedMesh = new Mesh();
-            //combinedMesh.CombineMeshes(instances);
-            //treeGO.GetComponent<MeshFilter>().sharedMesh = combinedMesh;
-            //treeGO.SetActive(true);
-            //
-            //b++;
         }
+        //float randomY = UnityEngine.Random.Range(0f, 360f);
+        //treeGO.transform.rotation = Quaternion.Euler(0f, randomY, 0f);
     }
 
     /// <summary>
