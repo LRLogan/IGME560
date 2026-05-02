@@ -509,55 +509,34 @@ public class TreeGen : MonoBehaviour
             }
         }
 
-        // ----- CAP START -----
-        bool capStart = !hasParent;
-        bool capEnd = true;
+        Vector3 startForward = (points[1] - points[0]).normalized;
+        Vector3 endForward = (points[^1] - points[^2]).normalized;
 
-        // If this branch has a parent, don't cap the base
-        // (prevents overlap at junctions)
-        if (points.Count > 0)
-        {
-            // heuristic: if first segment is very short, it's likely a continuation
-            if (points.Count > 1 && Vector3.Distance(points[0], points[1]) < 0.01f)
-                capStart = false;
-        }
+        Vector3 up = Vector3.up;
 
-        int ringSize = radialSegments;
+        // START CAP (root)
+        AddCap(
+            verts,
+            tris,
+            points[0],
+            -startForward,
+            up,
+            radius,
+            radialSegments,
+            true
+        );
 
-        // START CAP
-        if (capStart)
-        {
-            int centerIndex = verts.Count;
-            verts.Add(points[0]);
-
-            for (int i = 0; i < ringSize; i++)
-            {
-                int a = i;
-                int b = (i + 1) % ringSize;
-
-                tris.Add(centerIndex);
-                tris.Add(b);
-                tris.Add(a);
-            }
-        }
-
-        // END CAP
-        if (capEnd)
-        {
-            int baseIndex = (points.Count - 1) * ringSize;
-            int centerIndex = verts.Count;
-            verts.Add(points[^1]);
-
-            for (int i = 0; i < ringSize; i++)
-            {
-                int a = baseIndex + i;
-                int b = baseIndex + (i + 1) % ringSize;
-
-                tris.Add(centerIndex);
-                tris.Add(a);
-                tris.Add(b);
-            }
-        }
+        // END CAP (tip)
+        AddCap(
+            verts,
+            tris,
+            points[^1],
+            endForward,
+            up,
+            radius,
+            radialSegments,
+            false
+        );
 
         Mesh mesh = new Mesh();
         mesh.SetVertices(verts);
@@ -565,6 +544,57 @@ public class TreeGen : MonoBehaviour
         mesh.RecalculateNormals();
 
         return mesh;
+    }
+
+    private void AddCap(
+    List<Vector3> verts,
+    List<int> tris,
+    Vector3 center,
+    Vector3 forward,
+    Vector3 up,
+    float radius,
+    int radialSegments,
+    bool invert
+)
+    {
+        int centerIndex = verts.Count;
+        verts.Add(center);
+
+        for (int i = 0; i < radialSegments; i++)
+        {
+            float angle = (i / (float)radialSegments) * Mathf.PI * 2f;
+
+            Vector3 local =
+                (Mathf.Cos(angle) * Vector3.right +
+                 Mathf.Sin(angle) * Vector3.up) * radius;
+
+            // orient cap to tube direction
+            Quaternion rot = Quaternion.LookRotation(forward, up);
+            Vector3 worldPos = center + rot * local;
+
+            verts.Add(worldPos);
+        }
+
+        int start = centerIndex + 1;
+
+        for (int i = 0; i < radialSegments; i++)
+        {
+            int a = start + i;
+            int b = start + (i + 1) % radialSegments;
+
+            if (!invert)
+            {
+                tris.Add(centerIndex);
+                tris.Add(a);
+                tris.Add(b);
+            }
+            else
+            {
+                tris.Add(centerIndex);
+                tris.Add(b);
+                tris.Add(a);
+            }
+        }
     }
 
     /// <summary>
