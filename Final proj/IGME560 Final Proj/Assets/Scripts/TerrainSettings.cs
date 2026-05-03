@@ -63,5 +63,11 @@ public class TerrainSettings : MonoBehaviour
     public float leafJitter = 0.3f;
     public float leafMinDistance = 1.5f;
 
+    [Header("Texturing settings")]
+    public float biomeNoiseScale = 0.05f;
+    public float rockSlopeThreshold = 0.6f;
+    public float lowAltitudeThreshold = 0.3f;
+    public float highAltitudeThreshold = 0.75f;
+
     public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }

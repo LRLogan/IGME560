@@ -8,6 +8,7 @@ public class SimManager : MonoBehaviour
 {
     [SerializeField] private TerrainGen terrainGen;
     [SerializeField] private TreeGen treeGen;
+    [SerializeField] private TerrainSettings settings;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -19,6 +20,9 @@ public class SimManager : MonoBehaviour
     {
         terrainGen.StartFullTerrainSeq();
         treeGen.StartFullTreeGenSeq();
+        BiomeMapGen biomeGen = new BiomeMapGen(terrainGen.heightMap, settings);
+        // Call this once ready to start testing textures
+        //biomeGen.Generate();
     }
 
 }
