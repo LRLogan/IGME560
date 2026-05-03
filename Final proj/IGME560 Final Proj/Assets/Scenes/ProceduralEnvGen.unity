@@ -447,11 +447,13 @@ MonoBehaviour:
   minNormalY: 0.7
   treeSpacingRadius: 1
   treeNoiseTerrainRatio: 8
-  branchLength: 0.5
+  branchLength: 0.7
   baseBranchRadius: 0.1
   radiusFalloff: 0.6
   branchMaterial: {fileID: 2100000, guid: efe26027cacc84b409062a6cff9b90c4, type: 2}
   lSysIterations: 3
+  leafJitter: 0.3
+  leafMinDistance: 0.5
 --- !u!1 &941970898
 GameObject:
   m_ObjectHideFlags: 0

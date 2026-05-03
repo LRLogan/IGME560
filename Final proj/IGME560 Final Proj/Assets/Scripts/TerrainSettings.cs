@@ -60,6 +60,8 @@ public class TerrainSettings : MonoBehaviour
     public float radiusFalloff = 0.7f;
     public Material branchMaterial;
     public int lSysIterations = 3;
+    public float leafJitter = 0.3f;
+    public float leafMinDistance = 1.5f;
 
     public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }

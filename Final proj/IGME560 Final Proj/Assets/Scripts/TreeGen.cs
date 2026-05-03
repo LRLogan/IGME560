@@ -25,66 +25,62 @@ public class TreeGen : MonoBehaviour
     [SerializeField] private GameObject leafClusterPrefab;
     [SerializeField] private float leafSpawnChance = 0.8f;
     [SerializeField] private float leafScale = 1f;
+    private List<Vector3> leafSpawnPoints = new List<Vector3>();
 
     #region L-Sys rule sets
     private List<LSystemRuleSet> ruleSets = 
         new List<LSystemRuleSet>()
         {
             
-             new LSystemRuleSet
-             {
-                 angle = 25f,
-                 axiom = "X",
-                 rules = new List<Rule>
-                 {
-                     new Rule { key = "X", value = "F-[[X]+X]+F[+FX]-X" },
-                     new Rule { key = "F", value = "FF" }
-                 }
-             },
-         
-             new LSystemRuleSet
-             {
-                 angle = 20f,
-                 axiom = "X",
-                 rules = new List<Rule>
-                 {
-                     new Rule { key = "X", value = "F[+X]F[-X]+X" },
-                     new Rule { key = "F", value = "FF" }
-                 }
-             },
-         
-             new LSystemRuleSet
-             {
-                 angle = 30f,
-                 axiom = "X",
-                 rules = new List<Rule>
-                 {
-                     new Rule { key = "X", value = "F[-X][X]F[-X]+FX" },
-                     new Rule { key = "F", value = "FF" }
-                 }
-             },
-
-             new LSystemRuleSet
-             {
-                 angle = 18f,
-                 axiom = "X",
-                 rules = new List<Rule>
-                 {
-                     new Rule { key = "X", value = "F[+X][+X][X]  FX" },
-                     new Rule { key = "F", value = "FF" }
-                 }
-             },
+            // Med size 
+            new LSystemRuleSet
+            {
+                angle = 20f,
+                axiom = "X",
+                rules = new List<Rule>
+                {
+                    new Rule { key = "X", value = "F[+X]F[X]+X" },
+                    new Rule { key = "F", value = "FF" }
+                }
+            },
 
             new LSystemRuleSet
-             {
-                 angle = 25.7f,
-                 axiom = "X",
-                 rules = new List<Rule>
-                 {
-                     new Rule { key = "X", value = "F[+X][-X]FX" },
-                     new Rule { key = "F", value = "FF" }
-                 }
-             },
+            {
+                angle = 20f,
+                axiom = "X",
+                rules = new List<Rule>
+                {
+                    new Rule { key = "X", value = "F[+X][-X]FX" },
+                    new Rule { key = "F", value = "FF" }
+                }
+            },
+         
+            
+            // Use i=4 for larger nicer one, shory and stubby
+            new LSystemRuleSet
+            {
+                angle = 18f,
+                axiom = "X",
+                rules = new List<Rule>
+                {
+                    new Rule { key = "X", value = "F[+X][-X][&X][^X]F" },
+                    new Rule { key = "F", value = "FF" }
+                }
+            },
+            
+
+            // Should take up some real estate 
+            new LSystemRuleSet
+            {
+                angle = 18f,
+                axiom = "X",
+                rules = new List<Rule>
+                {
+                    new Rule { key = "X", value = "F[+X][-X][&X][^X]F[+X]" },
+                    new Rule { key = "F", value = "FF" }
+                }
+            }
+
         };
         #endregion
 
@@ -305,14 +301,13 @@ public class TreeGen : MonoBehaviour
                     // Add organic deviation
                     dir = Quaternion.Euler(
                         UnityEngine.Random.Range(-10f, 10f),
-                        UnityEngine.Random.Range(-10f, 10f),
+                        UnityEngine.Random.Range(-5f, 5f),
                         UnityEngine.Random.Range(-10f, 10f)
                     ) * dir;
 
                     // bias upward 
                     Vector3 upBias = Vector3.up * 0.9f;
                     dir = (dir + upBias).normalized;
-                    //dir = Vector3.Lerp(dir, Vector3.up, 0.2f).normalized;
 
                     Vector3 newPos = pos + dir.normalized * step;
 
@@ -462,7 +457,7 @@ public class TreeGen : MonoBehaviour
             // Attach the needed components and build the mesh 
             GameObject tempBranch = AttachBranchRenderer(treeGO, spline, branch.points, branch.rad, branch.hasParent);
 
-        }   // Tree is created by now
+        }   // Tree branches are created by now
 
         // Once more iterate but to check for branch endpoints to add leaves
         foreach (Branch branch in branches)
@@ -491,9 +486,16 @@ public class TreeGen : MonoBehaviour
             if (branch.rad > settings.baseBranchRadius * 0.6f)
                 continue;
 
-            Vector3 tip = branch.points[^1];
+            Vector3 end = branch.points[^1];
+            //Vector3 dir = (branch.points[^1] - branch.points[^2]).normalized;
+            Vector3 jitter = UnityEngine.Random.insideUnitSphere * settings.leafJitter;
+            end += jitter;
 
-            SpawnLeafCluster(tip, branch);
+            if (CanSpawnLeaf(end))
+            {
+                SpawnLeafCluster(end, branch);
+                leafSpawnPoints.Add(end);
+            }
         }
     }
 
@@ -721,6 +723,19 @@ public class TreeGen : MonoBehaviour
         );
 
         leaf.transform.localScale = Vector3.one * leafScale * UnityEngine.Random.Range(0.7f, 1.3f);
+    }
+
+    private bool CanSpawnLeaf(Vector3 pos)
+    {
+        float minDist = settings.leafMinDistance;
+
+        for (int i = 0; i < leafSpawnPoints.Count; i++)
+        {
+            if ((leafSpawnPoints[i] - pos).sqrMagnitude < minDist * minDist)
+                return false;
+        }
+
+        return true;
     }
 
     /// <summary>
