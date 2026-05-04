@@ -93,7 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: 8bdca5857a0de974fa99e48865b7e4c8, type: 2}
   m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
@@ -450,17 +450,17 @@ MonoBehaviour:
   branchLength: 0.7
   baseBranchRadius: 0.1
   radiusFalloff: 0.6
-  branchMaterial: {fileID: 2100000, guid: efe26027cacc84b409062a6cff9b90c4, type: 2}
+  branchMaterial: {fileID: 2100000, guid: 63ca6c825b659e44abec87684885ae62, type: 2}
   lSysIterations: 3
   leafJitter: 0.3
   leafMinDistance: 0.5
   biomeNoiseScale: 0.05
-  rockSlopeThreshold: 0.6
-  lowAltitudeThreshold: 0.3
-  highAltitudeThreshold: 1
+  rockSlopeThreshold: 0.4
+  lowAltitudeThreshold: 0.15
+  highAltitudeThreshold: 0.5
   minGrassHeight: 0.1
-  maxGrassHeight: 5
-  sandHeight: 0
+  maxGrassHeight: 2
+  sandHeightThreshold: 0.15
   terrainTextures:
   - {fileID: 2800000, guid: fbba21ba6c1f94445b5fc5ec8761416d, type: 3}
   - {fileID: 2800000, guid: 2e0153b3300be444d991f89fd969cb04, type: 3}
@@ -1372,9 +1372,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings: {fileID: 446672484}
   treeParent: {fileID: 1208411077}
-  leafClusterPrefab: {fileID: 5808464610329989845, guid: 76adde01ad0b0aa4b8ea2cbfdb445900, type: 3}
+  leafClusterPrefab: {fileID: 1407130241754475237, guid: 7f65003b0c8a1bb40a1f811c50df48ec, type: 3}
   leafSpawnChance: 1
-  leafScale: 0.5
+  leafScale: 2.5
 --- !u!4 &2008240942
 Transform:
   m_ObjectHideFlags: 0
@@ -1526,6 +1526,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2037736050}
   m_CullTransparentMesh: 1
+--- !u!1 &2055059176
+GameObject:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2055059178}
+  - component: {fileID: 2055059177}
+  m_Layer: 0
+  m_Name: StaticLightingSky
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2055059177
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2055059176}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 441482e8936e35048a1dffac814e3ef8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Profile: {fileID: 0}
+  m_StaticLightingSkyUniqueID: 0
+  m_StaticLightingCloudsUniqueID: 0
+  m_StaticLightingVolumetricClouds: 0
+  bounces: 1
+--- !u!4 &2055059178
+Transform:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2055059176}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1540,3 +1589,4 @@ SceneRoots:
   - {fileID: 417191732}
   - {fileID: 1432195342}
   - {fileID: 1208411077}
+  - {fileID: 2055059178}

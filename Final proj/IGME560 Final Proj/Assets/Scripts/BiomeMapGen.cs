@@ -59,55 +59,64 @@ public class BiomeMapGen
     {
         TerrainPointData p = heightMap[x, z];
 
-        // Quick normalizing of the height
         float height01 = (p.height - minHeight) / (maxHeight - minHeight);
         float slope = p.slope;
+
         float noise = Mathf.PerlinNoise(
             x * settings.biomeNoiseScale,
             z * settings.biomeNoiseScale
         );
 
-        // Grass check
-        float grass = 1f - slope;
-        grass *= Mathf.Lerp(0.7f, 1.2f, noise);
+        // -------------------------
+        // RAW WEIGHTS
+        // -------------------------
 
-        // Rock check
+        float grass = (1f - slope) * Mathf.Lerp(0.8f, 1.2f, noise);
+
         float rock = 0f;
-
         if (slope > settings.rockSlopeThreshold)
-        {
-            rock += (slope - settings.rockSlopeThreshold) * 2f;
-        }
+            rock = (slope - settings.rockSlopeThreshold) * 2f;
 
         if (height01 > settings.highAltitudeThreshold)
-        {
-            rock += height01;
-        }
+            rock += height01 * 0.5f;
 
-        // Dirt check
         float dirt = 0f;
-
         if (height01 < settings.lowAltitudeThreshold)
-        {
-            dirt += 1f - height01;
-        }
+            dirt = (1f - height01);
 
-        dirt += (1f - grass) * 0.3f;
+        dirt += (1f - grass) * 0.2f;
 
-        // Sand check
         float sand = 0f;
-        
+        if (height01 < settings.sandHeightThreshold)
+            sand = Mathf.InverseLerp(settings.sandHeightThreshold, 0f, height01);
 
-        // Noramalize all the weights (be sure to update this as I add more checks)
+        // -------------------------
+        // SHAPE DISTRIBUTION (BEFORE NORMALIZATION)
+        // -------------------------
+
+        grass = Mathf.Pow(grass, 1.2f);
+        rock = Mathf.Pow(rock, 1.4f);
+        dirt = Mathf.Pow(dirt, 1.1f);
+        sand = Mathf.Pow(sand, 1.3f);
+
+        // -------------------------
+        // NORMALIZE (IMPORTANT)
+        // -------------------------
+
         float sum = grass + rock + dirt + sand;
 
         if (sum > 0.0001f)
         {
-            grass = Mathf.Pow(grass, 1.3f);
-            rock = Mathf.Pow(rock, 1.3f);
-            dirt = Mathf.Pow(dirt, 1.2f);
-            sand = Mathf.Pow(sand, 1.5f);
+            grass /= sum;
+            rock /= sum;
+            dirt /= sum;
+            sand /= sum;
         }
+        else
+        {
+            grass = 1f; // fallback safe state
+        }
+
         grassMap[x, z] = grass;
         rockMap[x, z] = rock;
         dirtMap[x, z] = dirt;
