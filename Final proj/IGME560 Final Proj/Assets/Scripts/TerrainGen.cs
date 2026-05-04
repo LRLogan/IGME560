@@ -6,7 +6,8 @@ using UnityEngine;
 public class TerrainGen : MonoBehaviour
 {
     [SerializeField] private TerrainSettings settings;
-    public TerrainPointData[,] heightMap = null;  // Holds height and slope at the moment       
+    [SerializeField] private Material terrainMaterial;
+    public TerrainPointData[,] heightMap = null; 
     private Mesh terrainMesh;
     private float minHeight = float.MaxValue;
     private float maxHeight = float.MinValue;
@@ -38,7 +39,18 @@ public class TerrainGen : MonoBehaviour
         // --------------------------------------------------
 
         // Generate the terrain mesh
-        terrainMesh = GenerateTerrainMesh(heightMap, minHeight, maxHeight, settings);        
+        terrainMesh = GenerateTerrainMesh(heightMap, minHeight, maxHeight, settings);
+
+        // Biomen values and shader rendering ---------
+        BiomeMapGen biomeGen = new BiomeMapGen(heightMap, settings);
+        biomeGen.Generate();
+
+        SplatMapGen splatGen = new SplatMapGen();
+        Texture2D splat = splatGen.GenerateSplatMap(biomeGen, settings);
+
+        terrainMaterial.SetTexture("_SplatMap", splat);
+        // -----------------------------
+
         GetComponent<MeshFilter>().mesh = terrainMesh;
 
         Debug.Log("Finished Terrain set up");

@@ -20,9 +20,6 @@ public class SimManager : MonoBehaviour
     {
         terrainGen.StartFullTerrainSeq();
         treeGen.StartFullTreeGenSeq();
-        BiomeMapGen biomeGen = new BiomeMapGen(terrainGen.heightMap, settings);
-        // Call this once ready to start testing textures
-        //biomeGen.Generate();
     }
 
 }

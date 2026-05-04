@@ -68,9 +68,12 @@ public class TerrainSettings : MonoBehaviour
     public float rockSlopeThreshold = 0.6f;
     public float lowAltitudeThreshold = 0.3f;
     public float highAltitudeThreshold = 0.75f;
-    public float minGrassHeight = 0.5f;
+    public float minGrassHeight = 0.1f;
     public float maxGrassHeight = 5f;
     public float sandHeight = 0f;
 
+    [Header("Terrain Textures in order")]
+    public Texture2D[] terrainTextures;
+    
     public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }

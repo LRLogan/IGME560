@@ -12,7 +12,7 @@ public class BiomeMapGen
     public float[,] grassMap;
     public float[,] rockMap;
     public float[,] dirtMap;
-    public float[,] pathMap;
+    public float[,] sandMap;
 
     private float minHeight;
     private float maxHeight;
@@ -29,7 +29,7 @@ public class BiomeMapGen
         grassMap = new float[w, h];
         rockMap = new float[w, h];
         dirtMap = new float[w, h];
-        pathMap = new float[w, h];
+        sandMap = new float[w, h];
     }
 
     /// <summary>
@@ -94,22 +94,24 @@ public class BiomeMapGen
 
         dirt += (1f - grass) * 0.3f;
 
-        // Path check
-        //float path = 0f;
-        // reserved for spline-based paths or flow fields later
+        // Sand check
+        float sand = 0f;
+        
 
         // Noramalize all the weights (be sure to update this as I add more checks)
-        float sum = grass + rock + dirt;
+        float sum = grass + rock + dirt + sand;
 
         if (sum > 0.0001f)
         {
-            grass /= sum;
-            rock /= sum;
-            dirt /= sum;
+            grass = Mathf.Pow(grass, 1.3f);
+            rock = Mathf.Pow(rock, 1.3f);
+            dirt = Mathf.Pow(dirt, 1.2f);
+            sand = Mathf.Pow(sand, 1.5f);
         }
         grassMap[x, z] = grass;
         rockMap[x, z] = rock;
         dirtMap[x, z] = dirt;
+        sandMap[x, z] = sand;
     }
 
     private void ComputeHeightRange()

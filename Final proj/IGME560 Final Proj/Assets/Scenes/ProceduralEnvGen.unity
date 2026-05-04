@@ -454,6 +454,18 @@ MonoBehaviour:
   lSysIterations: 3
   leafJitter: 0.3
   leafMinDistance: 0.5
+  biomeNoiseScale: 0.05
+  rockSlopeThreshold: 0.6
+  lowAltitudeThreshold: 0.3
+  highAltitudeThreshold: 1
+  minGrassHeight: 0.1
+  maxGrassHeight: 5
+  sandHeight: 0
+  terrainTextures:
+  - {fileID: 2800000, guid: fbba21ba6c1f94445b5fc5ec8761416d, type: 3}
+  - {fileID: 2800000, guid: 2e0153b3300be444d991f89fd969cb04, type: 3}
+  - {fileID: 2800000, guid: f4c2b7e2446a93443a8602ed52450824, type: 3}
+  - {fileID: 2800000, guid: 780df0da6ab54ca40821db1b339520ee, type: 3}
 --- !u!1 &941970898
 GameObject:
   m_ObjectHideFlags: 0
@@ -737,6 +749,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 446672484}
+  terrainMaterial: {fileID: 2100000, guid: b436cd969de95804b949709b50b97a25, type: 2}
 --- !u!23 &1200092548
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -760,7 +773,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 848390390ab9d3740bfc096a1bdda56b, type: 2}
+  - {fileID: 2100000, guid: b436cd969de95804b949709b50b97a25, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -946,6 +959,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   terrainGen: {fileID: 1200092547}
   treeGen: {fileID: 2008240941}
+  settings: {fileID: 0}
 --- !u!4 &1570995479
 Transform:
   m_ObjectHideFlags: 0
