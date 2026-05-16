@@ -2,6 +2,9 @@ using System;
 using Unity.Mathematics;
 using UnityEngine;
 
+/// <summary>
+/// Full pipeline for terrain generation
+/// </summary>
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class TerrainGen : MonoBehaviour
 {

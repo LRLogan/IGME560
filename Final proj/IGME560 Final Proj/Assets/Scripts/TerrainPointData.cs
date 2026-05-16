@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Container class for indevidual vertecies terrain data
+/// </summary>
 public class TerrainPointData
 {
     // Fields

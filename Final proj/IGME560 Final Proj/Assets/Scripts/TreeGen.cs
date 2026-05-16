@@ -9,10 +9,13 @@ using UnityEngine;
 using UnityEngine.Splines;
 using UnityEngine.UIElements;
 
+/// <summary>
+/// Full pipeline for tree generation 
+/// </summary>
 public class TreeGen : MonoBehaviour
 {
     private Hashtable ruleSet = new Hashtable(10);
-    private StringBuilder rulesToDo = new StringBuilder("");    // lang in IGME540 PE
+    private StringBuilder rulesToDo = new StringBuilder(""); 
     private float angleToUse;
     private StringBuilder startRule;
     private TerrainGen terrainGen;

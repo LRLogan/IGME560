@@ -17,7 +17,11 @@ public class BiomeMapGen
     private float minHeight;
     private float maxHeight;
 
-
+    /// <summary>
+    /// Public constructor to create a biome gen instance
+    /// </summary>
+    /// <param name="heightMap"></param>
+    /// <param name="settings"></param>
     public BiomeMapGen(TerrainPointData[,] heightMap, TerrainSettings settings)
     {
         this.heightMap = heightMap;
@@ -37,6 +41,7 @@ public class BiomeMapGen
     /// </summary>
     public void Generate()
     {
+        // Set up and main loop for each vertex in the height map
         int width = heightMap.GetLength(0);
         int height = heightMap.GetLength(1);
         ComputeHeightRange();
@@ -51,7 +56,8 @@ public class BiomeMapGen
     }
 
     /// <summary>
-    /// Evaluates a cell to determine its suitability / designation
+    /// Evaluates a cell to determine its suitability / designation.
+    /// Does so by evaluating weights
     /// </summary>
     /// <param name="x"></param>
     /// <param name="z"></param>
@@ -69,7 +75,6 @@ public class BiomeMapGen
 
         // -------------------------
         // RAW WEIGHTS
-        // -------------------------
 
         float grass = (1f - slope) * Mathf.Lerp(0.8f, 1.2f, noise);
 
@@ -92,7 +97,6 @@ public class BiomeMapGen
 
         // -------------------------
         // SHAPE DISTRIBUTION (BEFORE NORMALIZATION)
-        // -------------------------
 
         grass = Mathf.Pow(grass, 1.2f);
         rock = Mathf.Pow(rock, 1.4f);
@@ -100,8 +104,7 @@ public class BiomeMapGen
         sand = Mathf.Pow(sand, 1.3f);
 
         // -------------------------
-        // NORMALIZE (IMPORTANT)
-        // -------------------------
+        // NORMALIZE 
 
         float sum = grass + rock + dirt + sand;
 
@@ -123,6 +126,9 @@ public class BiomeMapGen
         sandMap[x, z] = sand;
     }
 
+    /// <summary>
+    /// Finds the local max and min heights for internal use
+    /// </summary>
     private void ComputeHeightRange()
     {
         minHeight = float.MaxValue;

@@ -16,6 +16,10 @@ public class SimManager : MonoBehaviour
         FullRegen();
     }
 
+    /// <summary>
+    /// Full regeneration of the world.
+    /// Able to be called while sim runs
+    /// </summary>
     public void FullRegen()
     {
         terrainGen.StartFullTerrainSeq();

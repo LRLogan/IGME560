@@ -1,7 +1,16 @@
 using UnityEngine;
 
+/// <summary>
+/// Creates the splat map to hold biome data values for texturing
+/// </summary>
 public class SplatMapGen
 {
+    /// <summary>
+    /// Full generation of the splat map
+    /// </summary>
+    /// <param name="biome"></param>
+    /// <param name="settings"></param>
+    /// <returns></returns>
     public Texture2D GenerateSplatMap(
         BiomeMapGen biome,
         TerrainSettings settings

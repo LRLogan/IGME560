@@ -72,8 +72,6 @@ public class TerrainSettings : MonoBehaviour
     public float maxGrassHeight = 5f;
     public float sandHeightThreshold = 0.15f;
 
-    [Header("Terrain Textures in order")]
-    public Texture2D[] terrainTextures;
     
     public Vector2 GetDomainWarpSettings() => new Vector2(warpStrength, warpScale);
 }
