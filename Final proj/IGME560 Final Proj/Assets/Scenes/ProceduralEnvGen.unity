@@ -400,7 +400,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   size: 64
   frequencyScale: 32
-  seedOffset: {x: 1, y: 1}
+  seedOffset: {x: 1000, y: 1}
   seed: 26
   persistence: 0.6
   maxOctaves: 10
@@ -461,11 +461,6 @@ MonoBehaviour:
   minGrassHeight: 0.1
   maxGrassHeight: 2
   sandHeightThreshold: 0.15
-  terrainTextures:
-  - {fileID: 2800000, guid: fbba21ba6c1f94445b5fc5ec8761416d, type: 3}
-  - {fileID: 2800000, guid: 2e0153b3300be444d991f89fd969cb04, type: 3}
-  - {fileID: 2800000, guid: f4c2b7e2446a93443a8602ed52450824, type: 3}
-  - {fileID: 2800000, guid: 780df0da6ab54ca40821db1b339520ee, type: 3}
 --- !u!1 &916885060
 GameObject:
   m_ObjectHideFlags: 0
