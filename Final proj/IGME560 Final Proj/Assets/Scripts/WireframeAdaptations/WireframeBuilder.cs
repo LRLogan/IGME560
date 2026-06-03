@@ -35,7 +35,7 @@ public class WireframeBuilder : MonoBehaviour
          * The reason I am building a sequence and some other seemingly hard coded values
          * is to have a fine control over the final animation as it will be exported
          */
-        StartWireframePipeline();
+        StartFullWireframePipeline();
     }
 
     // Update is called once per frame
@@ -44,7 +44,10 @@ public class WireframeBuilder : MonoBehaviour
         
     }
 
-    public void StartWireframePipeline()
+    /// <summary>
+    /// Entry point for full pipeline
+    /// </summary>
+    public void StartFullWireframePipeline()
     {
         TerrainPointData[,] heightmap = TerrainGen.GenerateTerrainHeightMap(settings);
         BuildWireframeFromHeights(heightmap);
@@ -58,6 +61,11 @@ public class WireframeBuilder : MonoBehaviour
         cam.transform.position = new Vector3(heightmap.GetLength(0) * 1.5f, heightmap.GetLength(0) / 2, -heightmap.GetLength(1) - camOffsetZ);
     }
 
+    /// <summary>
+    /// Entry point for the specific generation of the mesh
+    /// </summary>
+    /// <param name="heightmap"></param>
+    /// <returns></returns>
     public Transform BuildWireframeFromHeights(TerrainPointData[,] heightmap)
     {
         // Basic height map set up
