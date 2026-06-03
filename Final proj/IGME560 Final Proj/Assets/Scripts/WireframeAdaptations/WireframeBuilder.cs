@@ -4,6 +4,9 @@ using UnityEditor.Networking.PlayerConnection;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+/// <summary>
+/// Wireframe visualizer of a heightmap written by Logan Larrondo
+/// </summary>
 public class WireframeBuilder : MonoBehaviour
 {
     [SerializeField] private TerrainSettings settings;
@@ -43,9 +46,19 @@ public class WireframeBuilder : MonoBehaviour
 
     private void BuildWireframe()
     {
+        // Basic height map set up
         TerrainPointData[,] heightmap = TerrainGen.GenerateTerrainHeightMap(settings);
-        vertHeightMap = new GameObject[heightmap.GetLength(0) / pointToVertRatio, 
-            heightmap.GetLength(1) / pointToVertRatio];
+        int vertWidth = 
+            Mathf.CeilToInt(
+                heightmap.GetLength(0) / (float)pointToVertRatio
+            );
+
+        int vertHeight =
+            Mathf.CeilToInt(
+                heightmap.GetLength(1) / (float)pointToVertRatio
+            );
+
+        vertHeightMap = new GameObject[vertWidth, vertHeight];
 
         // ---------------------
         // Build verts
@@ -58,8 +71,13 @@ public class WireframeBuilder : MonoBehaviour
         {
             for (int x = 0; x < heightmap.GetLength(0); x += pointToVertRatio)
             {
-                // Do something at each desired point 
-                vertHeightMap[c, r] = Instantiate(sphere, new Vector3(c, heightmap[x, z].height, r), Quaternion.identity, vertParent);
+                // Place each vert
+                vertHeightMap[c, r] = Instantiate(
+                    sphere,
+                    new Vector3(x, heightmap[x, z].height, z),
+                    Quaternion.identity,
+                    vertParent
+                );
                 c++;
             }
             r++;
