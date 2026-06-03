@@ -8,13 +8,13 @@ using UnityEngine.UIElements;
 
 public struct Edge
 {
-    public Vector3 start;
-    public Vector3 end;
+    public int startIndex;
+    public int endIndex;
 
-    public Edge(Vector3 start, Vector3 end)
+    public Edge(int start, int end)
     {
-        this.start = start;
-        this.end = end;
+        startIndex = start;
+        endIndex = end;
     }
 }
 
@@ -101,6 +101,7 @@ public class WireframeBuilder : MonoBehaviour
 
     public void UseHMCenter_VEB(TerrainPointData[,] heightmap)
     {
+        /* Does not work (gibberish)
         Vector3 center = Vector3.zero;
 
         foreach (Vector3 v in vertexMap)
@@ -119,6 +120,7 @@ public class WireframeBuilder : MonoBehaviour
         }
 
         cam.transform.position = new Vector3(heightmap.GetLength(0) * 1.5f, heightmap.GetLength(0) / 2, -heightmap.GetLength(1) - camOffsetZ);
+        */
     }
     #endregion
 
