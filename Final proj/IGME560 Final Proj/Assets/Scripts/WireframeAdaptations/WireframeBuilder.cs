@@ -1,3 +1,4 @@
+using System.Net;
 using Unity.VisualScripting;
 using UnityEditor.Networking.PlayerConnection;
 using UnityEngine;
@@ -50,9 +51,9 @@ public class WireframeBuilder : MonoBehaviour
         int r = 0, c = 0;
 
         // Loop over the height map at point ratio intervals
-        for (int z = 0; z < heightmap.GetLength(0); z += pointToVertRatio)
+        for (int z = 0; z < heightmap.GetLength(1); z += pointToVertRatio)
         {
-            for (int x = 0; x < heightmap.GetLength(1); x += pointToVertRatio)
+            for (int x = 0; x < heightmap.GetLength(0); x += pointToVertRatio)
             {
                 // Do something at each desired point 
                 vertHeightMap[c, r] = Instantiate(sphere, new Vector3(c, heightmap[x, z].height, r), Quaternion.identity, vertParent);
@@ -63,21 +64,25 @@ public class WireframeBuilder : MonoBehaviour
         }
 
         // Connecting the verts to create the wireframe
-        for (int z = 0; z < vertHeightMap.GetLength(0); z ++)
+        for (int z = 0; z < vertHeightMap.GetLength(1); z ++)
         {
-            for (int x = 0; x < vertHeightMap.GetLength(1); x ++)
+            for (int x = 0; x < vertHeightMap.GetLength(0); x ++)
             {
-                if(x + 1 < vertHeightMap.GetLength(1) && z + 1 < vertHeightMap.GetLength(0))
+                if(x + 1 < vertHeightMap.GetLength(0) && z + 1 < vertHeightMap.GetLength(1))
                 {
                     GameObject go1 = vertHeightMap[x, z].gameObject;
-                    GameObject go2 = vertHeightMap[x+1, z].gameObject; // This is incorrect for final but can prove concept
+                    GameObject go2 = vertHeightMap[x+1, z].gameObject; // This is incorrect for final but can prove concept. I will need to account for all edge cases
                     GameObject tempCyl = Instantiate(cyl, 
                         new Vector3(x, go1.transform.position.y, z), 
                         Quaternion.identity);
 
                     Vector3 desNormal = Vector3.Cross(go2.transform.position - go1.transform.position, go1.transform.forward).normalized;
+                    float halfDist = Vector3.Distance(go1.transform.position, go2.transform.position) / 2;
                     tempCyl.transform.forward = desNormal;
-                    tempCyl.transform.localScale = new Vector3(0.2f, Vector3.Distance(go1.transform.position, go2.transform.position) , 0.2f);
+                    tempCyl.transform.localScale = new Vector3(0.2f, halfDist, 0.2f);
+
+                    // Applying final pos to be in the center of the 2 verts
+                    tempCyl.transform.position = (go1.transform.position + go2.transform.position) * 0.5f; 
                 }
                 
             }
