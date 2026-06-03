@@ -14,8 +14,13 @@ public class WireframeBuilder : MonoBehaviour
     [SerializeField] private GameObject sphere;
     [SerializeField] private GameObject cyl;
     [SerializeField] private Transform vertParent;
-    [SerializeField] private Material lineMat;
+    [SerializeField] private Transform edgeParent;
+    [SerializeField] private Transform wireframeParent;
     private GameObject[,] vertHeightMap;
+
+    [Header("Custom center settings. Disreguard if using other centerpoint")]
+    [SerializeField] private float camOffsetZ = 75;
+    [SerializeField] private GameObject cam;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -43,9 +48,17 @@ public class WireframeBuilder : MonoBehaviour
     {
         TerrainPointData[,] heightmap = TerrainGen.GenerateTerrainHeightMap(settings);
         BuildWireframeFromHeights(heightmap);
+        UseHMCenter(heightmap);
     }
 
-    public void BuildWireframeFromHeights(TerrainPointData[,] heightmap)
+    public void UseHMCenter(TerrainPointData[,] heightmap)
+    {
+        // Center the display on the screen 
+        wireframeParent.position = new Vector3(heightmap.GetLength(0), heightmap.GetLength(0), -heightmap.GetLength(1));
+        cam.transform.position = new Vector3(heightmap.GetLength(0) * 1.5f, heightmap.GetLength(0) / 2, -heightmap.GetLength(1) - camOffsetZ);
+    }
+
+    public Transform BuildWireframeFromHeights(TerrainPointData[,] heightmap)
     {
         // Basic height map set up
         int vertWidth = 
@@ -123,6 +136,7 @@ public class WireframeBuilder : MonoBehaviour
                 }
             }
         }
+        return wireframeParent;
     }
 
     /// <summary>
@@ -132,7 +146,7 @@ public class WireframeBuilder : MonoBehaviour
     /// <param name="go2"></param>
     private void ConnectPoints(GameObject go1, GameObject go2)
     {
-        GameObject tempCyl = Instantiate(cyl);
+        GameObject tempCyl = Instantiate(cyl, edgeParent);
 
         float halfDist =
             Vector3.Distance(
