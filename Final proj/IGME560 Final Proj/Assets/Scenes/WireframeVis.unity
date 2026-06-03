@@ -1260,14 +1260,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   size: 32
-  frequencyScale: 10
+  frequencyScale: 8
   seedOffset: {x: 0, y: 0}
   seed: 42
   persistence: 0.6
   maxOctaves: 10
   lacunarity: 2
   activeOctaves: 00000000010000000200000003000000040000000500000006000000070000000800000009000000
-  heightMultiplier: 10
+  heightMultiplier: 5
   heightCurve:
     serializedVersion: 2
     m_Curve: []
@@ -1275,7 +1275,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   spikeCurvatureThreshold: 50
-  slopeScale: 2
+  slopeScale: 1
   useDomainWarping: 1
   warpStrength: 10
   warpScale: 1

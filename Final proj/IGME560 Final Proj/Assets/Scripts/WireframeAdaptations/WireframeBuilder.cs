@@ -47,10 +47,13 @@ public class WireframeBuilder : MonoBehaviour
         vertHeightMap = new GameObject[heightmap.GetLength(0) / pointToVertRatio, 
             heightmap.GetLength(1) / pointToVertRatio];
 
+        // ---------------------
+        // Build verts
+        // ---------------------
         // I know I can do this mathimatically but the formula escapes me atm
         int r = 0, c = 0;
 
-        // Loop over the height map at point ratio intervals
+        // Loop over the height map at point ratio intervals 
         for (int z = 0; z < heightmap.GetLength(1); z += pointToVertRatio)
         {
             for (int x = 0; x < heightmap.GetLength(0); x += pointToVertRatio)
@@ -63,29 +66,74 @@ public class WireframeBuilder : MonoBehaviour
             c = 0;
         }
 
-        // Connecting the verts to create the wireframe
-        for (int z = 0; z < vertHeightMap.GetLength(1); z ++)
+        // ---------------------
+        // Build connections
+        // ---------------------
+        int width = vertHeightMap.GetLength(0);
+        int height = vertHeightMap.GetLength(1);
+
+        for (int z = 0; z < height; z++)
         {
-            for (int x = 0; x < vertHeightMap.GetLength(0); x ++)
+            for (int x = 0; x < width; x++)
             {
-                if(x + 1 < vertHeightMap.GetLength(0) && z + 1 < vertHeightMap.GetLength(1))
+                GameObject current =
+                    vertHeightMap[x, z].gameObject;
+
+                if (x + 1 < width)
                 {
-                    GameObject go1 = vertHeightMap[x, z].gameObject;
-                    GameObject go2 = vertHeightMap[x+1, z].gameObject; // This is incorrect for final but can prove concept. I will need to account for all edge cases
-                    GameObject tempCyl = Instantiate(cyl, 
-                        new Vector3(x, go1.transform.position.y, z), 
-                        Quaternion.identity);
-
-                    Vector3 desNormal = Vector3.Cross(go2.transform.position - go1.transform.position, go1.transform.forward).normalized;
-                    float halfDist = Vector3.Distance(go1.transform.position, go2.transform.position) / 2;
-                    tempCyl.transform.forward = desNormal;
-                    tempCyl.transform.localScale = new Vector3(0.2f, halfDist, 0.2f);
-
-                    // Applying final pos to be in the center of the 2 verts
-                    tempCyl.transform.position = (go1.transform.position + go2.transform.position) * 0.5f; 
+                    ConnectPoints(
+                        current,
+                        vertHeightMap[x + 1, z].gameObject
+                    );
                 }
-                
+
+                if (z + 1 < height)
+                {
+                    ConnectPoints(
+                        current,
+                        vertHeightMap[x, z + 1].gameObject
+                    );
+                }
+
+                if (x + 1 < width &&
+                    z + 1 < height)
+                {
+                    ConnectPoints(
+                        current,
+                        vertHeightMap[x + 1, z + 1].gameObject
+                    );
+                }
             }
         }
+    }
+
+    /// <summary>
+    /// Helper to build connection points for the grid
+    /// </summary>
+    /// <param name="go1"></param>
+    /// <param name="go2"></param>
+    private void ConnectPoints(GameObject go1, GameObject go2)
+    {
+        GameObject tempCyl = Instantiate(cyl);
+
+        Vector3 desNormal =
+            Vector3.Cross(
+                go2.transform.position - go1.transform.position,
+                go1.transform.forward
+            ).normalized;
+
+        float halfDist =
+            Vector3.Distance(
+                go1.transform.position,
+                go2.transform.position
+            ) * 0.5f;
+
+        tempCyl.transform.forward = desNormal;
+
+        tempCyl.transform.localScale =
+            new Vector3(0.2f, halfDist, 0.2f);
+
+        tempCyl.transform.position =
+            (go1.transform.position + go2.transform.position) * 0.5f;
     }
 }
