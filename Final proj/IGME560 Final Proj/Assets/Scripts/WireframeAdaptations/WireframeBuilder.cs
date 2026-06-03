@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEditor.Networking.PlayerConnection;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -7,7 +8,7 @@ public class WireframeBuilder : MonoBehaviour
     [SerializeField] private TerrainSettings settings;
     [SerializeField] [Tooltip("1 for a 1:1")] private int pointToVertRatio;
     [SerializeField] private GameObject sphere;
-    [SerializeField] private GameObject emptyGO;
+    [SerializeField] private GameObject cyl;
     [SerializeField] private Transform vertParent;
     [SerializeField] private Material lineMat;
     private GameObject[,] vertHeightMap;
@@ -66,24 +67,17 @@ public class WireframeBuilder : MonoBehaviour
         {
             for (int x = 0; x < vertHeightMap.GetLength(1); x ++)
             {
-                GameObject lrObj = Instantiate(emptyGO, new Vector3(0,0,0), Quaternion.identity);
-                LineRenderer lineRenderer = lrObj.AddComponent<LineRenderer>();
-                lineRenderer.material = lineMat;
-
-                // Configure thickness and color properties
-                lineRenderer.startWidth = 1.0f;
-                lineRenderer.endWidth = 1.0f;
-                lineRenderer.startColor = Color.red;
-                lineRenderer.endColor = Color.cyan;
-
-                // Allocate the size of the point array for each line
-                lineRenderer.positionCount = 2;
-
-                // Setting coords for start finish
                 if(x + 1 < vertHeightMap.GetLength(1) && z + 1 < vertHeightMap.GetLength(0))
                 {
-                    lineRenderer.SetPosition(0, new Vector3(x, vertHeightMap[x, z].gameObject.transform.position.y, z));
-                    lineRenderer.SetPosition(1, new Vector3(x + 1, vertHeightMap[x, z].gameObject.transform.position.y, z + 1));
+                    GameObject go1 = vertHeightMap[x, z].gameObject;
+                    GameObject go2 = vertHeightMap[x+1, z].gameObject; // This is incorrect for final but can prove concept
+                    GameObject tempCyl = Instantiate(cyl, 
+                        new Vector3(x, go1.transform.position.y, z), 
+                        Quaternion.identity);
+
+                    Vector3 desNormal = Vector3.Cross(go2.transform.position - go1.transform.position, go1.transform.forward).normalized;
+                    tempCyl.transform.forward = desNormal;
+                    tempCyl.transform.localScale = new Vector3(0.2f, Vector3.Distance(go1.transform.position, go2.transform.position) , 0.2f);
                 }
                 
             }
