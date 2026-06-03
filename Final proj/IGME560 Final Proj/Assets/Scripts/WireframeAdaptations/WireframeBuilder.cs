@@ -134,24 +134,22 @@ public class WireframeBuilder : MonoBehaviour
     {
         GameObject tempCyl = Instantiate(cyl);
 
-        Vector3 desNormal =
-            Vector3.Cross(
-                go2.transform.position - go1.transform.position,
-                go1.transform.forward
-            ).normalized;
-
         float halfDist =
             Vector3.Distance(
                 go1.transform.position,
                 go2.transform.position
             ) * 0.5f;
 
-        tempCyl.transform.forward = desNormal;
+        Vector3 edgeDirection =
+            (go2.transform.position - go1.transform.position).normalized;
+
+        tempCyl.transform.up = edgeDirection;
 
         tempCyl.transform.localScale =
             new Vector3(0.2f, halfDist, 0.2f);
 
         tempCyl.transform.position =
             (go1.transform.position + go2.transform.position) * 0.5f;
+
     }
 }
