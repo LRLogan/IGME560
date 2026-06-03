@@ -41,13 +41,13 @@ public class WireframeBuilder : MonoBehaviour
 
     public void StartWireframePipeline()
     {
-        BuildWireframe();
+        TerrainPointData[,] heightmap = TerrainGen.GenerateTerrainHeightMap(settings);
+        BuildWireframeFromHeights(heightmap);
     }
 
-    private void BuildWireframe()
+    public void BuildWireframeFromHeights(TerrainPointData[,] heightmap)
     {
         // Basic height map set up
-        TerrainPointData[,] heightmap = TerrainGen.GenerateTerrainHeightMap(settings);
         int vertWidth = 
             Mathf.CeilToInt(
                 heightmap.GetLength(0) / (float)pointToVertRatio
@@ -62,7 +62,7 @@ public class WireframeBuilder : MonoBehaviour
 
         // ---------------------
         // Build verts
-        // ---------------------
+        // --------------------- 
         // I know I can do this mathimatically but the formula escapes me atm
         int r = 0, c = 0;
 
