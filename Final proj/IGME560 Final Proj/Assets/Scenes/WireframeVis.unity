@@ -837,7 +837,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69c4786616d4f9a4cad52479f5d5b82a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size: 64
+  size: 128
   frequencyScale: 5
   seedOffset: {x: 0, y: 0}
   seed: 42

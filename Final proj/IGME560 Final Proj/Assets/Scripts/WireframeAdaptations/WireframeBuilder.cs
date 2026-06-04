@@ -1,5 +1,6 @@
 using NUnit;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using Unity.VisualScripting;
 using UnityEditor.Networking.PlayerConnection;
@@ -49,6 +50,12 @@ public class WireframeBuilder : MonoBehaviour
     private List<Matrix4x4> edgeMatrices = new();
     [SerializeField] private Material cylMat;
     [SerializeField] private Mesh cylMesh;
+
+    // Presets 
+    private float[,] mountainPreset;
+    private float[,] hillsPreset;
+    private float[,] canyonPreset;
+    private float[,] craterPreset;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -121,6 +128,41 @@ public class WireframeBuilder : MonoBehaviour
 
         cam.transform.position = new Vector3(heightmap.GetLength(0) * 1.5f, heightmap.GetLength(0) / 2, -heightmap.GetLength(1) - camOffsetZ);
         */
+    }
+
+    private void LoadPresetCSVFiles()
+    {
+        string path =
+            Path.Combine(
+                Application.dataPath,
+                "PresetTerrainData/mountain_128x128.csv"
+            );
+        mountainPreset =
+            Utilitys.LoadCSVToFloatArray(path);
+
+        path =
+            Path.Combine(
+                Application.dataPath,
+                "PresetTerrainData/canyon_128x128.csv"
+            );
+        canyonPreset =
+            Utilitys.LoadCSVToFloatArray(path);
+
+        path =
+            Path.Combine(
+                Application.dataPath,
+                "PresetTerrainData/crater_basin_128x128.csv"
+            );
+        craterPreset =
+            Utilitys.LoadCSVToFloatArray(path);
+
+        path =
+            Path.Combine(
+                Application.dataPath,
+                "PresetTerrainData/steppe_hills_128x128.csv"
+            );
+        hillsPreset =
+            Utilitys.LoadCSVToFloatArray(path);
     }
     #endregion
 
