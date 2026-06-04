@@ -8,10 +8,10 @@ using UnityEngine.UIElements;
 
 public struct Edge
 {
-    public int startIndex;
-    public int endIndex;
+    public (int, int) startIndex;
+    public (int, int) endIndex;
 
-    public Edge(int start, int end)
+    public Edge((int, int) start, (int, int) end)
     {
         startIndex = start;
         endIndex = end;
@@ -313,16 +313,16 @@ public class WireframeBuilder : MonoBehaviour
                 if (x + 1 < width)
                 {
                     edges.Add(new Edge(
-                        current,
-                        vertexMap[x + 1, z]
+                        (x, z),
+                        (x + 1, z)
                     ));
                 }
 
                 if (z + 1 < height)
                 {
                     edges.Add(new Edge(
-                        current,
-                        vertexMap[x, z + 1]
+                        (x, z),
+                        (x, z + 1)
                     ));
                 }
 
@@ -330,8 +330,8 @@ public class WireframeBuilder : MonoBehaviour
                     z + 1 < height)
                 {
                     edges.Add(new Edge(
-                        current,
-                        vertexMap[x + 1, z + 1]
+                        (x, z),
+                        (x + 1, z + 1)
                     ));
                 }
             }
@@ -345,10 +345,14 @@ public class WireframeBuilder : MonoBehaviour
         // ---------------------
         foreach (Edge e in edges)
         {
-            Vector3 edge = e.end - e.start;
+            Vector3 edge = 
+                vertexMap[e.endIndex.Item1, e.endIndex.Item2] - 
+                vertexMap[e.startIndex.Item1, e.startIndex.Item2];
+
             float distance = edge.magnitude;
             Vector3 midpoint =
-                (e.start + e.end) * 0.5f;
+                (vertexMap[e.startIndex.Item1, e.startIndex.Item2] + 
+                vertexMap[e.endIndex.Item1, e.endIndex.Item2]) * 0.5f;
 
             // Getting the sesired forward vector stored in a quat
             Quaternion rot =
