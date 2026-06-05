@@ -27,7 +27,6 @@ public class WireframeBuilder : MonoBehaviour
     // General vars
     [SerializeField] private TerrainSettings settings;
     [SerializeField] [Tooltip("1 for a 1:1")] private int pointToVertRatio;
-    [SerializeField] private bool useVEB = true;
 
     // Game object oriented pipeline
     private GameObject[,] vertHeightMap;
@@ -57,6 +56,15 @@ public class WireframeBuilder : MonoBehaviour
     private float[,] canyonPreset;
     private float[,] craterPreset;
 
+    // Animation
+    [SerializeField] private float transitionDuration = 5f;
+    [SerializeField] private bool animate = true;
+    [SerializeField] private AnimationCurve heightCurve;
+    private int currentMapIndex = 0;
+    private int nextMapIndex = 1;
+    private float transitionTimer = 0f;
+    private List<float[,]> maps;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -71,14 +79,15 @@ public class WireframeBuilder : MonoBehaviour
          * is to have a fine control over the final animation as it will be exported
          */
 
-        if (!useVEB) StartFullWFPipeline_GO();
-        else StartFullWFPipeline_VEB();
+        StartAnimationPipeline();
+        //StartFullWFPipeline_VEB();
+        //StartFullWFPipeline_GO();
     }
 
-    // Update is called once per frame
     void LateUpdate()
     {
-        if(useVEB)RenderWireframe();
+        Animate();
+        //RenderWireframe(); // Used for VEB
     }
 
     /// <summary>
@@ -96,6 +105,20 @@ public class WireframeBuilder : MonoBehaviour
         TerrainPointData[,] heightmap = TerrainGen.GenerateTerrainHeightMap(settings);
         BuildWireframeFromHeights_VEB(heightmap);
         UseHMCenter_VEB(heightmap);
+    }
+
+    public void StartAnimationPipeline()
+    {
+        LoadPresetCSVFiles();
+        maps = new List<float[,]>()
+        {
+            mountainPreset,
+            canyonPreset,
+            hillsPreset,
+            craterPreset,
+            mountainPreset // to complete the loop
+        };
+        BuildWireframeFromHeights_VEB(maps[0]);
     }
 
     #region General Helpers
@@ -311,6 +334,30 @@ public class WireframeBuilder : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Overload to support float array
+    /// </summary>
+    /// <param name="heightmap"></param>
+    public void BuildWireframeFromHeights_VEB(float[,] heightmap)
+    {
+        // Basic height map set up
+        int vertWidth =
+            Mathf.CeilToInt(
+                heightmap.GetLength(0) / (float)pointToVertRatio
+            );
+
+        int vertHeight =
+            Mathf.CeilToInt(
+                heightmap.GetLength(1) / (float)pointToVertRatio
+            );
+
+        vertexMap = new Vector3[vertWidth, vertHeight];
+
+        BuildVerts(heightmap);
+        BuildEdges();
+        BuildMatrices();
+    }
+
     private void BuildVerts(TerrainPointData[,] heightmap)
     {
         // ---------------------
@@ -328,6 +375,36 @@ public class WireframeBuilder : MonoBehaviour
                 vertexMap[c, r] = new Vector3(
                     x,
                     heightmap[x, z].height,
+                    z
+                );
+                c++;
+            }
+            r++;
+            c = 0;
+        }
+    }
+
+    /// <summary>
+    /// Overload to support float array
+    /// </summary>
+    /// <param name="heightmap"></param>
+    private void BuildVerts(float[,] heightmap)
+    {
+        // ---------------------
+        // Build verts
+        // --------------------- 
+        // I know I can do this mathimatically but the formula escapes me atm
+        int r = 0, c = 0;
+
+        // Loop over the height map at point ratio intervals 
+        for (int z = 0; z < heightmap.GetLength(1); z += pointToVertRatio)
+        {
+            for (int x = 0; x < heightmap.GetLength(0); x += pointToVertRatio)
+            {
+                // Place each vert
+                vertexMap[c, r] = new Vector3(
+                    x,
+                    heightmap[x, z],
                     z
                 );
                 c++;
@@ -445,4 +522,65 @@ public class WireframeBuilder : MonoBehaviour
     }
     #endregion
 
+    /// <summary>
+    /// Used in an update method to animate the maps in the maps list
+    /// </summary>
+    private void Animate()
+    {
+        transitionTimer += Time.deltaTime;
+
+        // Timestamp / progress in the transition
+        float progress =
+            transitionTimer /
+            transitionDuration;
+        progress = Mathf.Clamp01(progress);
+
+        // progress curved to the height curve
+        float curvedT =
+            heightCurve.Evaluate(progress);
+
+        float[,] startMap =
+            maps[currentMapIndex];
+
+        float[,] targetMap =
+            maps[nextMapIndex];
+
+        for (int z = 0; z < vertexMap.GetLength(1); z++)
+        {
+            for (int x = 0; x < vertexMap.GetLength(0); x++)
+            {
+                float startHeight =
+                    startMap[
+                        x * pointToVertRatio,
+                        z * pointToVertRatio
+                    ];
+
+                float targetHeight =
+                    targetMap[
+                        x * pointToVertRatio,
+                        z * pointToVertRatio
+                    ];
+
+                vertexMap[x, z].y =
+                    Mathf.Lerp(
+                        startHeight,
+                        targetHeight,
+                        curvedT
+                    );
+            }
+        }
+
+        BuildMatrices();
+
+        // Advance to the next map once the transition is complete
+        if (progress >= 1f)
+        {
+            currentMapIndex = nextMapIndex;
+            nextMapIndex++;
+
+            if (nextMapIndex >= maps.Count) nextMapIndex = 0;
+
+            transitionTimer = 0f;
+        }
+    }
 }
