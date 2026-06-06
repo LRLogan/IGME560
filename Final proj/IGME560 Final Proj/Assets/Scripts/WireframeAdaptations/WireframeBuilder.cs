@@ -177,7 +177,7 @@ public class WireframeBuilder : MonoBehaviour
         path =
             Path.Combine(
                 Application.dataPath,
-                "PresetTerrainData/twin_valleys_128x128.csv"
+                "PresetTerrainData/river_valley_128x128.csv"
             );
         craterPreset =
             Utilitys.LoadCSVToFloatArray(path);
@@ -185,7 +185,7 @@ public class WireframeBuilder : MonoBehaviour
         path =
             Path.Combine(
                 Application.dataPath,
-                "PresetTerrainData/ridged_steppe_128x128.csv"
+                "PresetTerrainData/mountain_range_128x128.csv"
             );
         hillsPreset =
             Utilitys.LoadCSVToFloatArray(path);
