@@ -380,7 +380,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings: {fileID: 1836875605}
   pointToVertRatio: 2
-  useVEB: 1
   sphere: {fileID: 3944236408145752306, guid: bb604f2abc89b9a4bb0b0ba3eaff00ef, type: 3}
   cyl: {fileID: 1903701257218537428, guid: 4d38b1d5fed0c484e96cbb3591ad7036, type: 3}
   vertParent: {fileID: 910039756}
@@ -390,6 +389,32 @@ MonoBehaviour:
   cam: {fileID: 970795423}
   cylMat: {fileID: 2100000, guid: f672ae245bb1e7c439d9bc43d92ba414, type: 2}
   cylMesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  transitionDuration: 5
+  animate: 1
+  heightCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!23 &330582607
 MeshRenderer:
   m_ObjectHideFlags: 0

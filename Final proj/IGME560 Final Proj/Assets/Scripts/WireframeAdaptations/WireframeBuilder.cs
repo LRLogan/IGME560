@@ -57,6 +57,7 @@ public class WireframeBuilder : MonoBehaviour
     private float[,] craterPreset;
 
     // Animation
+    [Header("Animation")]
     [SerializeField] private float transitionDuration = 5f;
     [SerializeField] private bool animate = true;
     [SerializeField] private AnimationCurve heightCurve;
@@ -176,7 +177,7 @@ public class WireframeBuilder : MonoBehaviour
         path =
             Path.Combine(
                 Application.dataPath,
-                "PresetTerrainData/crater_basin_128x128.csv"
+                "PresetTerrainData/twin_valleys_128x128.csv"
             );
         craterPreset =
             Utilitys.LoadCSVToFloatArray(path);
@@ -184,7 +185,7 @@ public class WireframeBuilder : MonoBehaviour
         path =
             Path.Combine(
                 Application.dataPath,
-                "PresetTerrainData/steppe_hills_128x128.csv"
+                "PresetTerrainData/ridged_steppe_128x128.csv"
             );
         hillsPreset =
             Utilitys.LoadCSVToFloatArray(path);
