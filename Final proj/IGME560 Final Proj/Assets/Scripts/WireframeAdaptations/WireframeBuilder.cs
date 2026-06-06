@@ -86,8 +86,10 @@ public class WireframeBuilder : MonoBehaviour
 
     void LateUpdate()
     {
+        if (!animate)
+            return;
+
         Animate();
-        //RenderWireframe(); // Used for VEB
     }
 
     /// <summary>
@@ -356,6 +358,7 @@ public class WireframeBuilder : MonoBehaviour
         BuildVerts(heightmap);
         BuildEdges();
         BuildMatrices();
+        RenderWireframe();
     }
 
     private void BuildVerts(TerrainPointData[,] heightmap)
@@ -422,6 +425,8 @@ public class WireframeBuilder : MonoBehaviour
         int width = vertexMap.GetLength(0);
         int height = vertexMap.GetLength(1);
 
+        edges.Clear();
+
         for (int z = 0; z < height; z++)
         {
             for (int x = 0; x < width; x++)
@@ -462,6 +467,9 @@ public class WireframeBuilder : MonoBehaviour
         // ---------------------
         // Build edgeMatrices for rendering
         // ---------------------
+
+        edgeMatrices.Clear();
+
         foreach (Edge e in edges)
         {
             Vector3 edge = 
@@ -488,7 +496,6 @@ public class WireframeBuilder : MonoBehaviour
                  );
 
             edgeMatrices.Add(matrix);
-            RenderWireframe();
         }
     }
 
@@ -571,6 +578,7 @@ public class WireframeBuilder : MonoBehaviour
         }
 
         BuildMatrices();
+        RenderWireframe();
 
         // Advance to the next map once the transition is complete
         if (progress >= 1f)
