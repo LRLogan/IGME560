@@ -118,8 +118,7 @@ public class WireframeBuilder : MonoBehaviour
             mountainPreset,
             canyonPreset,
             hillsPreset,
-            craterPreset,
-            mountainPreset // to complete the loop
+            craterPreset
         };
         BuildWireframeFromHeights_VEB(maps[0]);
     }
@@ -169,26 +168,38 @@ public class WireframeBuilder : MonoBehaviour
         path =
             Path.Combine(
                 Application.dataPath,
-                "PresetTerrainData/canyon_128x128.csv"
+                "PresetTerrainData/valleyHeightmap1_128x128.png"
             );
         canyonPreset =
-            Utilitys.LoadCSVToFloatArray(path);
+            Utilitys.LoadHeightmapFromImage(
+                path,
+                0f,
+                40f
+            );
 
         path =
             Path.Combine(
                 Application.dataPath,
-                "PresetTerrainData/river_valley_128x128.csv"
+                "PresetTerrainData/mtnHeightmap2_128x128.png"
             );
         craterPreset =
-            Utilitys.LoadCSVToFloatArray(path);
+            Utilitys.LoadHeightmapFromImage(
+                path,
+                0f,
+                40f
+            );
 
         path =
             Path.Combine(
                 Application.dataPath,
-                "PresetTerrainData/mountain_range_128x128.csv"
+                "PresetTerrainData/mtnHeightmap1_128x128.png"
             );
         hillsPreset =
-            Utilitys.LoadCSVToFloatArray(path);
+            Utilitys.LoadHeightmapFromImage(
+                path,
+                0f,
+                40f
+            );
     }
     #endregion
 

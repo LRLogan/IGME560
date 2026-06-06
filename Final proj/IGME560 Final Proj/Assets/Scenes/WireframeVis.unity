@@ -389,7 +389,7 @@ MonoBehaviour:
   cam: {fileID: 970795423}
   cylMat: {fileID: 2100000, guid: f672ae245bb1e7c439d9bc43d92ba414, type: 2}
   cylMesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
-  transitionDuration: 5
+  transitionDuration: 7
   animate: 1
   heightCurve:
     serializedVersion: 2
@@ -397,18 +397,18 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 1
-      outSlope: 1
-      tangentMode: 34
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 1
-      outSlope: 1
-      tangentMode: 34
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
