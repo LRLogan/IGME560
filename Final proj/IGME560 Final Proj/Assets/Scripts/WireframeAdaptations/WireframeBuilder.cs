@@ -7,6 +7,9 @@ using UnityEditor.Networking.PlayerConnection;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+/// <summary>
+/// Edge batch data to be sent to GPU 
+/// </summary>
 public struct Edge
 {
     public (int, int) startIndex;
@@ -155,6 +158,9 @@ public class WireframeBuilder : MonoBehaviour
         */
     }
 
+    /// <summary>
+    ///  Loading preset CSV files for cyceling generation  
+    /// </summary>
     private void LoadPresetCSVFiles()
     {
         string path =
@@ -511,6 +517,9 @@ public class WireframeBuilder : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Batches the wireframe edges into the GPU 
+    /// </summary>
     private void RenderWireframe()
     {
         const int batchSize = 1023;
