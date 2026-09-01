@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Core pipeline for generating procedural terrain
+/// </summary>
 public class TerrainGen : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
