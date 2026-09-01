@@ -16,4 +16,12 @@ public class TerrainGen : MonoBehaviour
     {
         
     }
+
+    /// <summary>
+    /// Main entry point for full terrain gen seq
+    /// </summary>
+    public void StartFullTerrainGen()
+    {
+
+    }
 }

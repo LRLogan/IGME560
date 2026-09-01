@@ -13,6 +13,7 @@ public class SimManager : MonoBehaviour
     {
         // Generate the texture atlas if needed
         //atlasGen.GenerateTextureAtlas();
+        //terrainGen.StartFullTerrainGen();
     }
 
     // Update is called once per frame
