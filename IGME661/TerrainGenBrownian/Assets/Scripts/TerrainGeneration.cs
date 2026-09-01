@@ -3,6 +3,7 @@ using Unity.Collections;
 using UnityEngine;
 using Unity.Mathematics;
 using UnityEngine.Rendering;
+using System.Linq;
 
 public class TerrainGeneration : MonoBehaviour
 {
@@ -24,12 +25,11 @@ public class TerrainGeneration : MonoBehaviour
     private GameObject mLight;
 
     // Texture atlas settings
-    public Texture2D atlas;
-    public int atlasSize = 2;
-    public float grassHeight = 0.35f;
-    public float iceHeight = 0.60f;
-    public float snowHeight = 0.80f;
-    public float pinkHeight = 0.90f;
+    private Texture2D atlas;
+    private int atlasSize = 2;
+    private float grassHeight = 0.42f;
+    private float snowHeight = 0.52f;
+    private float iceHeight = 0.54f;
 
 
     // code to get rid of fog from: https://forum.unity.com/threads/how-do-i-turn-off-fog-on-a-specific-camera-using-urp.1373826/
@@ -111,6 +111,7 @@ public class TerrainGeneration : MonoBehaviour
     // uses whatever texture the material is given
     public Mesh GenerateTerrainMesh(NativeArray<float> heightMap)
     {
+        Debug.Log($"max {heightMap.Max()} min: {heightMap.Min()}");
         int width = Width, depth = Depth;
         int height = MaxHeight;
         int indicesIndex = 0;
@@ -134,18 +135,32 @@ public class TerrainGeneration : MonoBehaviour
                     float useAltXPlusY = heightMap[(x + 1) * (depth) + (z)] * height - (MaxHeight/2.0f);
                     float useAltZPlusY = heightMap[(x) * (depth) + (z + 1)] * height- (MaxHeight/2.0f);
                     float useAltXAndZPlusY = heightMap[(x + 1) * (depth) + (z + 1)] * height- (MaxHeight/2.0f);
-                    
+                    float normalizedY = heightMap[(x) * depth + (z)]; // just the height from map
+
                     vert.Add(new float3(x, y, z));
                     vert.Add(new float3(x, useAltZPlusY, z + 1)); 
                     vert.Add(new float3(x + 1, useAltXPlusY, z));  
-                    vert.Add(new float3(x + 1, useAltXAndZPlusY, z + 1)); 
-                    
-                    // add uv's
-                    // remember to give it all 4 sides of the image coords
-                    uvs.Add(new Vector2(0.0f,0.0f));
-                    uvs.Add(new Vector2(0.0f,1.0f));
-                    uvs.Add(new Vector2(1.0f,0.0f));
-                    uvs.Add(new Vector2(1.0f,1.0f));
+                    vert.Add(new float3(x + 1, useAltXAndZPlusY, z + 1));
+
+                    //Debug.Log($"ny: {normalizedY}");
+                    // add uv's for texture chosen by heightmap
+                    // The coordinates for the textures are hard-coded
+                    if(normalizedY >= iceHeight)
+                    {
+                        AddAtlasUVs(uvs, 1, 0);
+                    }
+                    else if (normalizedY >= snowHeight)
+                    {
+                        AddAtlasUVs(uvs, 0, 1);
+                    }
+                    else if (normalizedY >= grassHeight)
+                    {
+                        AddAtlasUVs(uvs, 0, 0);
+                    }
+                    else
+                    {
+                        AddAtlasUVs(uvs, 1, 1);
+                    }
                     
                     // front or top face indices for a quad
                     //0,2,1,0,3,2
@@ -177,11 +192,12 @@ public class TerrainGeneration : MonoBehaviour
     /// <summary>
     /// Takes a quad from the terrain and maps it to the part of the atlas
     /// </summary>
-    /// <param name="uvs"></param>
-    /// <param name="tileX"></param>
-    /// <param name="tileY"></param>
+    /// <param name="uvs">the list of uvs</param>
+    /// <param name="tileX">desired texture column</param>
+    /// <param name="tileY">desired texture row</param>
     private void AddAtlasUVs(List<Vector2> uvs, int tileX, int tileY)
     {
+        // Finding the coordinate of the texture needed on the atlas instead of using the entire texture
         float tileWidth = 1.0f / atlasSize;
         float tileHeight = 1.0f / atlasSize;
 
