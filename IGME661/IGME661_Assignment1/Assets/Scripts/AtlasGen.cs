@@ -43,8 +43,9 @@ public class AtlasGen : MonoBehaviour
     {
         // Early exits
         if (textures.Count == 0) return -1;
-        //if () return 0;
+        if (File.Exists(Path.Combine(outputDirName, outputFileName))) return 0;
 
+        #region Raw atlas file setup
         // Take the image size into the function
         // Assume all images are a power of 2 and square
         pixelWidth = imageSize;
@@ -53,7 +54,7 @@ public class AtlasGen : MonoBehaviour
         // Make the list of uvs
         textureUVs = new List<TextureUV>(textures.Count);
 
-        // we're going to assume our images are a power of 2 so we just
+        // We're going to assume our images are a power of 2 so we just
         // need to get the sqrt of the number of images and round up
         int squareRoot = Mathf.CeilToInt(Mathf.Sqrt(textures.Count));
         int squareRootH = squareRoot;
@@ -69,12 +70,13 @@ public class AtlasGen : MonoBehaviour
         // allocate space for the atlas and file data
         atlas = new Texture2D(atlasWidth, atlasHeight);
         byte[][] fileData = new byte[textures.Count][];
+        #endregion
 
+        #region Adding textures to the Atlas
         // read the file data in parallel
-        /*
-           Parallel.For(0, textures.Count,
-            index => { fileData[index] = File.ReadAllBytes(textures[index]); });
-        */
+        Parallel.For(0, textures.Count,
+            index => { fileData[index] = File.ReadAllBytes(textures[index].name); });
+        
 
         // Put all the images into the image file and write
         // all the texture data to the texture uv map list.
@@ -121,7 +123,7 @@ public class AtlasGen : MonoBehaviour
         // write the atlas out to a file
         // note that the default dir is usually the upper level project dir
         File.WriteAllBytes(outputFileName, atlas.EncodeToPNG());
-
+        #endregion
         // Atlas made
         return 1;
     }
