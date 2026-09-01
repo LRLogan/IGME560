@@ -76,7 +76,6 @@ public class AtlasGen : MonoBehaviour
         // read the file data in parallel
         Parallel.For(0, textures.Count,
             index => { fileData[index] = File.ReadAllBytes(textures[index].name); });
-        
 
         // Put all the images into the image file and write
         // all the texture data to the texture uv map list.
@@ -124,7 +123,10 @@ public class AtlasGen : MonoBehaviour
         // note that the default dir is usually the upper level project dir
         File.WriteAllBytes(outputFileName, atlas.EncodeToPNG());
         #endregion
+
         // Atlas made
+        Debug.Log($"File in dir: {Directory.GetCurrentDirectory() + "/" + outputFileName} \n " +
+            $"Textures count: {textures.Count}");
         return 1;
     }
 }
