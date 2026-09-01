@@ -22,7 +22,16 @@ public class TerrainGeneration : MonoBehaviour
     private GameObject mRealTerrain;
     private NoiseAlgorithm mTerrainNoise;
     private GameObject mLight;
-    
+
+    // Texture atlas settings
+    public Texture2D atlas;
+    public int atlasSize = 2;
+    public float grassHeight = 0.35f;
+    public float iceHeight = 0.60f;
+    public float snowHeight = 0.80f;
+    public float pinkHeight = 0.90f;
+
+
     // code to get rid of fog from: https://forum.unity.com/threads/how-do-i-turn-off-fog-on-a-specific-camera-using-urp.1373826/
     // Unity calls this method automatically when it enables this component
     private void OnEnable()
@@ -82,6 +91,8 @@ public class TerrainGeneration : MonoBehaviour
         MeshRenderer meshRenderer = mRealTerrain.GetComponent<MeshRenderer>();
         MeshFilter meshFilter = mRealTerrain.GetComponent<MeshFilter>();
         meshRenderer.material = TerrainMaterial;
+
+        Material chosenMap = null;
         meshFilter.mesh = GenerateTerrainMesh(terrainHeightMap);
         terrainHeightMap.Dispose();
         NoiseAlgorithm.OnExit();
@@ -162,5 +173,29 @@ public class TerrainGeneration : MonoBehaviour
        
         return terrainMesh;
     }
+
+    /// <summary>
+    /// Takes a quad from the terrain and maps it to the part of the atlas
+    /// </summary>
+    /// <param name="uvs"></param>
+    /// <param name="tileX"></param>
+    /// <param name="tileY"></param>
+    private void AddAtlasUVs(List<Vector2> uvs, int tileX, int tileY)
+    {
+        float tileWidth = 1.0f / atlasSize;
+        float tileHeight = 1.0f / atlasSize;
+
+        float minX = tileX * tileWidth;
+        float minY = tileY * tileHeight;
+
+        float maxX = minX + tileWidth;
+        float maxY = minY + tileHeight;
+
+        uvs.Add(new Vector2(minX, minY));
+        uvs.Add(new Vector2(minX, maxY));
+        uvs.Add(new Vector2(maxX, minY));
+        uvs.Add(new Vector2(maxX, maxY));
+    }
+
 
 }

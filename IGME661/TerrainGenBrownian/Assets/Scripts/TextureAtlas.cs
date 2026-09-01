@@ -81,11 +81,11 @@ public class TextureAtlas
 
         for (int i = 0; i < names.Length; i++)
         {
-            // Assigning start / end pixeld while accounting for anti-ailiasing
-            float pixelStartX = ((x1 * pWidth) + 1) / aWidth + 1;
-            float pixelStartY = ((y1 * pHeight) + 1) / aHeight + 1;
-            float pixelEndX = ((x1 + 1) * pWidth - 1) / aWidth - 1;
-            float pixelEndY = ((y1 + 1) * pHeight - 1) / aHeight - 1;
+            // Setting the start / end pixels 
+            float pixelStartX = ((x1 * pWidth) + 1) / aWidth;
+            float pixelStartY = ((y1 * pHeight) + 1) / aHeight;
+            float pixelEndX = ((x1 + 1) * pWidth - 1) / aWidth;
+            float pixelEndY = ((y1 + 1) * pHeight - 1) / aHeight;
             TextureUV currentUVInfo = new TextureUV
             {
                 nameID = i,
