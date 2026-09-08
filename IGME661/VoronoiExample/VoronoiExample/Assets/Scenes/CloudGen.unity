@@ -678,21 +678,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f538908c29506ae468e1fd9e2638aaa9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DrawDebug: 1
-  RandomSeed: 1
-  RegionNumber: 60
-  Width: 500
-  Height: 500
-  RegionImage: {fileID: 1781379816}
-  MaxHeight: 100
-  Depth: 128
-  Frequency: 1
-  Amplitude: 0.5
-  Lacunarity: 2
-  Gain: 0.5
-  Octaves: 8
-  Scale: 0.01
-  NormalizeBias: 1
+  drawDebug: 1
+  regionImage: {fileID: 1781379816}
+  width: 512
+  height: 512
+  randomSeed: 123
+  maxHeight: 100
+  frequency: 1
+  amplitude: 0.5
+  lacunarity: 2
+  gain: 0.5
+  octaves: 8
+  scale: 0.005
+  normalizeBias: 1
+  cloudThreshold: 0.408
+  sharpness: 2.24
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
