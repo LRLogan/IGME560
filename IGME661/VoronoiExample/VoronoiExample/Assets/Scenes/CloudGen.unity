@@ -691,8 +691,8 @@ MonoBehaviour:
   octaves: 8
   scale: 0.005
   normalizeBias: 1
-  cloudThreshold: 0.408
-  sharpness: 2.24
+  cloudThreshold: 0.138
+  sharpness: 2.31
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
