@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 /* Plan:
  * Use some of the FbM code from demo while adding in some tidbits like customization and domain warping from 560 final proj
@@ -18,7 +22,7 @@ public class TerrainGen : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        Random.InitState(terrainSettings.voronoiRandSeed);
     }
 
     // Update is called once per frame
@@ -32,6 +36,13 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     public void StartFullTerrainGen()
     {
+
+    }
+
+    private void GenerateVoronoiRegions(int height, int width, int regionCount, int seed)
+    {
+        // Init region center locations
+
 
     }
 }
