@@ -241,6 +241,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8aeffd727b18564194729cfb86f0e3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGen
+  atlasMat: {fileID: 0}
 --- !u!114 &209106794
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -253,6 +254,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbeeb6f9506df1443bdf8b916ac7fe5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainSettings
+  voronoiRandSeed: 1
+  regionCount: 25
 --- !u!4 &209106795
 Transform:
   m_ObjectHideFlags: 0
@@ -424,6 +427,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c5f9e77144f80243b4a485ccfac9a1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimManager
+  atlasGen: {fileID: 0}
+  terrainGen: {fileID: 209106793}
 --- !u!4 &732768319
 Transform:
   m_ObjectHideFlags: 0

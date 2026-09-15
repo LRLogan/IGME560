@@ -12,20 +12,20 @@ public class TerrainSettings : MonoBehaviour
     public int worldDepth = 100;
 
     [Header("Terrain")]
-    public int MaxHeight;
-    public Material TerrainMaterial;
-    public float Frequency = 1.0f;
-    public float Amplitude = 0.5f;
-    public float Lacunarity = 2.0f;
-    public float Gain = 0.5f;
-    public int Octaves = 8;
-    public float Scale = 0.01f;
-    public float NormalizeBias = 1.0f;
+    public int maxHeight;
+    public Material terrainMaterial;
+    public float frequency = 1.0f;
+    public float amplitude = 0.5f;
+    public float lacunarity = 2.0f;
+    public float gain = 0.5f;
+    public int octaves = 8;
+    public float scale = 0.01f;
+    public float normalizeBias = 1.0f;
 
     [Header("Texyure atlas")]
-    private Texture2D atlas;
-    private int atlasSize = 2;
-    private float grassHeight = 0.42f;
-    private float snowHeight = 0.52f;
-    private float iceHeight = 0.54f;
+    public Texture2D atlas;
+    public int atlasSize = 2;
+    public float grassHeight = 0.42f;
+    public float snowHeight = 0.52f;
+    public float iceHeight = 0.54f;
 }
