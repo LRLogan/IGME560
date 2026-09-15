@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public sealed class VoronoiRegion
+public class VoronoiRegion
 {
     Color debugColor;
 

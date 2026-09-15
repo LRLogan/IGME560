@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
+using Unity.Burst;
 
 /* Plan:
  * Use some of the FbM code from demo while adding in some tidbits like customization and domain warping from 560 final proj
@@ -18,11 +19,14 @@ public class TerrainGen : MonoBehaviour
 {
     [SerializeField] Material atlasMat;
     private TerrainSettings terrainSettings;
+    private List<VoronoiRegion> regions;
+    private List<Vector2> islands;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         Random.InitState(terrainSettings.voronoiRandSeed);
+        regions = new List<VoronoiRegion>(terrainSettings.regionCount);
     }
 
     // Update is called once per frame
@@ -36,13 +40,21 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     public void StartFullTerrainGen()
     {
+        GenerateVoronoiRegions(terrainSettings.worldDepth, terrainSettings.worldWidth, terrainSettings.regionCount, terrainSettings.voronoiRandSeed)
+    }
+
+    private void GenerateVoronoiRegions(int depth, int width, int regionCount, int seed)
+    {
+        // Init region center locations
+        for (int i = 0; i < regionCount; i++)
+        {
+            
+        }
 
     }
 
-    private void GenerateVoronoiRegions(int height, int width, int regionCount, int seed)
+    private void SpawnIsland(Vector3 location)
     {
-        // Init region center locations
-
 
     }
 }
