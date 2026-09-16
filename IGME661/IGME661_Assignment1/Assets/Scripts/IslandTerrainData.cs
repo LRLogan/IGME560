@@ -6,6 +6,7 @@ public class IslandTerrainData
     public readonly int depth;
 
     public readonly float[] heightMap;
+    public readonly float[] islandMask;
 
     public readonly float worldWidth;
     public readonly float worldDepth;
@@ -32,6 +33,7 @@ public class IslandTerrainData
         this.maxHeight = maxHeight;
 
         heightMap = new float[width * depth];
+        islandMask = new float[width * depth];
     }
 
     public int GetIndex(int x, int z)
@@ -47,5 +49,10 @@ public class IslandTerrainData
     public void SetHeight(int x, int z, float value)
     {
         heightMap[GetIndex(x, z)] = value;
+    }
+
+    public void SetIslandMask(int x, int z, float value)
+    {
+        islandMask[GetIndex(x, z)] = value;
     }
 }

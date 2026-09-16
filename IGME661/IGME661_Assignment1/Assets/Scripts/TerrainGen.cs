@@ -203,8 +203,7 @@ public class TerrainGen : MonoBehaviour
     /// Generates an island heightmap from noise
     /// and applies a radial island mask.
     /// </summary>
-    private IslandTerrainData GenerateIslandTerrain(
-        int seed)
+    private IslandTerrainData GenerateIslandTerrain(int seed)
     {
         IslandTerrainData terrainData =
             new IslandTerrainData(
@@ -251,19 +250,23 @@ public class TerrainGen : MonoBehaviour
                 float islandMask =
                     CalculateIslandMask(x, z);
 
-                float shapedHeight =
+                float height =
                     noise * islandMask;
 
-                // Prevent the center of the island
-                // from becoming too flat or too low.
-                shapedHeight =
-                    Mathf.Max(
-                        terrainSettings.seaLevel,
-                        shapedHeight
-                    );
+                Debug.Log(x);
+                Debug.Log(z);
+                Debug.Log(islandMask);
+                terrainData.SetIslandMask(
+                    x,
+                    z,
+                    islandMask
+                );
 
-                terrainData.heightMap[index] =
-                    shapedHeight;
+                terrainData.SetHeight(
+                    x,
+                    z,
+                    height
+                );
             }
         }
 
@@ -274,57 +277,6 @@ public class TerrainGen : MonoBehaviour
     /// Creates a radial falloff so the noise
     /// becomes an island instead of an infinite
     /// terrain field.
-    /// </summary>
-    private float CalculateIslandMask(
-        int x,
-        int z)
-    {
-        float normalizedX =
-            x /
-            (float)(terrainSettings.width - 1);
-
-        float normalizedZ =
-            z /
-            (float)(terrainSettings.depth - 1);
-
-        // Convert 0..1 to -1..1.
-        float centeredX =
-            normalizedX * 2f - 1f;
-
-        float centeredZ =
-            normalizedZ * 2f - 1f;
-
-        float distance =
-            new Vector2(
-                centeredX,
-                centeredZ
-            ).magnitude;
-
-        // Outside the island radius.
-        if (distance >= 1f)
-            return 0f;
-
-        // Controls where the shoreline begins.
-        float innerRadius =
-            terrainSettings.islandRadius;
-
-        float mask =
-            1f -
-            Mathf.InverseLerp(
-                innerRadius,
-                1f,
-                distance
-            );
-
-        // Smooth the edge.
-        mask =
-            mask * mask * (3f - 2f * mask);
-
-        return mask;
-    }
-
-    /// <summary>
-    /// Converts IslandTerrainData into a Unity Mesh.
     /// </summary>
     private Mesh GenerateTerrainMesh(
         IslandTerrainData terrainData)
@@ -427,6 +379,97 @@ public class TerrainGen : MonoBehaviour
         return mesh;
     }
 
+    private float CalculateIslandMask(int x, int z)
+    {
+        float normalizedX =
+            x / (float)(terrainSettings.width - 1);
+
+        float normalizedZ =
+            z / (float)(terrainSettings.depth - 1);
+
+        float centeredX =
+            normalizedX * 2f - 1f;
+
+        float centeredZ =
+            normalizedZ * 2f - 1f;
+
+        float distance =
+            new Vector2(
+                centeredX,
+                centeredZ
+            ).magnitude;
+
+        float radius =
+            terrainSettings.islandRadius;
+
+        if (distance >= radius)
+            return 0f;
+
+        float mask =
+            1f - (distance / radius);
+
+        // Smooth the transition.
+        mask =
+            mask * mask * (3f - 2f * mask);
+
+        return mask;
+    }
+
+    #region Helpers
+    private int GetOrCreateVertex(
+    int x,
+    int z,
+    IslandTerrainData terrainData,
+    List<Vector3> vertices,
+    Dictionary<Vector2Int, int> vertexLookup)
+    {
+        Vector2Int coordinate =
+            new Vector2Int(x, z);
+
+        if (vertexLookup.TryGetValue(
+            coordinate,
+            out int existingIndex))
+        {
+            return existingIndex;
+        }
+
+        float normalizedX =
+            x / (float)(terrainData.width - 1);
+
+        float normalizedZ =
+            z / (float)(terrainData.depth - 1);
+
+        float worldX =
+            (normalizedX - 0.5f) *
+            terrainData.worldWidth;
+
+        float worldZ =
+            (normalizedZ - 0.5f) *
+            terrainData.worldDepth;
+
+        float worldY =
+            terrainData.GetHeight(x, z) *
+            terrainData.maxHeight;
+
+        int vertexIndex =
+            vertices.Count;
+
+        vertices.Add(
+            new Vector3(
+                worldX,
+                worldY,
+                worldZ
+            )
+        );
+
+        vertexLookup.Add(
+            coordinate,
+            vertexIndex
+        );
+
+        return vertexIndex;
+    }
+
     /// <summary>
     /// Deletes the previously generated islands.
     /// </summary>
@@ -444,4 +487,5 @@ public class TerrainGen : MonoBehaviour
         generatedIslands.Clear();
         islandLocations.Clear();
     }
+    #endregion
 }

@@ -6,10 +6,10 @@ using UnityEngine;
 public class TerrainSettings : MonoBehaviour
 {
     [Header("Voronoi and world")] 
-    public int voronoiRandSeed = 1;
+    public int voronoiRandSeed = 1234;
     public int regionCount = 25;
-    public int worldWidth = 200;
-    public int worldDepth = 200;
+    public int worldWidth = 500;
+    public int worldDepth = 500;
 
     [Header("Terrain")]
     public int maxHeight;
@@ -19,10 +19,10 @@ public class TerrainSettings : MonoBehaviour
     public float lacunarity = 2.0f;
     public float gain = 0.5f;
     public int octaves = 8;
-    public float scale = 0.01f;
+    public float scale = 0.1f;
     public float normalizeBias = 1.0f;
     public float seaLevel = 0.05f;
-    public float islandRadius = 0.35f;
+    public float islandRadius = 0.8f;
     public int width = 129;
     public int depth = 129;
 
