@@ -8,8 +8,8 @@ public class TerrainSettings : MonoBehaviour
     [Header("Voronoi and world")] 
     public int voronoiRandSeed = 1;
     public int regionCount = 25;
-    public int worldWidth = 100;
-    public int worldDepth = 100;
+    public int worldWidth = 200;
+    public int worldDepth = 200;
 
     [Header("Terrain")]
     public int maxHeight;
@@ -21,6 +21,10 @@ public class TerrainSettings : MonoBehaviour
     public int octaves = 8;
     public float scale = 0.01f;
     public float normalizeBias = 1.0f;
+    public float seaLevel = 0.05f;
+    public float islandRadius = 0.35f;
+    public int width = 129;
+    public int depth = 129;
 
     [Header("Texyure atlas")]
     public Texture2D atlas;

@@ -1,186 +1,447 @@
-using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
-using Unity.Mathematics;
-using UnityEngine.Rendering;
-using System.Linq;
-using Unity.Burst;
 
-/* Plan:
- * Use some of the FbM code from demo while adding in some tidbits like customization and domain warping from 560 final proj
- * In terms of placing assets and texturing ground I can use both slope and biome data
- * In the end for this assignment I would like to have a nice island generator
- * Maybe even if the island size premits and there is an ideal location I can add a building 
- */
-
-/// <summary>
-/// Core pipeline for generating procedural terrain
-/// </summary>
 public class TerrainGen : MonoBehaviour
 {
-    [SerializeField] Material atlasMat;
+    [Header("Terrain Settings")]
+    [SerializeField]
     private TerrainSettings terrainSettings;
-    private List<VoronoiRegion> regions;
-    private List<Vector2> islands;
+
+    [SerializeField]
+    private Material atlasMat;
+
+    [Header("Generation")]
+    [SerializeField]
+    private int islandCount = 3;
+
+    [SerializeField]
+    private float islandSpacing = 150f;
+
+    [SerializeField]
+    private Transform islandParent;
+
     private NoiseAlgorithm terrainNoise;
 
+    private readonly List<GameObject> generatedIslands = new();
+    private readonly List<Vector3> islandLocations = new();
 
-    void Start()
+    private void Start()
     {
-        // Field init
-        UnityEngine.Random.InitState(terrainSettings.voronoiRandSeed);
-        regions = new List<VoronoiRegion>(terrainSettings.regionCount);
-        terrainNoise = new NoiseAlgorithm();
-
-
+        InitializeGenerator();
     }
 
-    void Update()
+    private void InitializeGenerator()
     {
-        
+        if (terrainSettings == null)
+        {
+            Debug.LogError(
+                "TerrainGen: No TerrainSettings assigned."
+            );
+
+            return;
+        }
+
+        terrainNoise = new NoiseAlgorithm();
+
+        terrainNoise.InitializeNoise(
+            terrainSettings.width,
+            terrainSettings.depth,
+            terrainSettings.voronoiRandSeed
+        );
+
+        terrainNoise.InitializePerlinNoise(
+            terrainSettings.frequency,
+            terrainSettings.amplitude,
+            terrainSettings.octaves,
+            terrainSettings.lacunarity,
+            terrainSettings.gain,
+            terrainSettings.scale,
+            terrainSettings.normalizeBias
+        );
+
+        if (islandParent == null)
+        {
+            GameObject parent =
+                new GameObject("Generated Islands");
+
+            islandParent = parent.transform;
+        }
     }
 
     /// <summary>
-    /// Main entry point for full terrain gen seq
+    /// Main entry point for full terrain generation.
     /// </summary>
     public void StartFullTerrainGen()
     {
-        GenerateVoronoiRegions(terrainSettings.worldDepth,
-            terrainSettings.worldWidth,
-            terrainSettings.regionCount,
-            terrainSettings.voronoiRandSeed);
+        ClearPreviousGeneration();
+
+        GenerateIslandLocations();
+
+        for (int i = 0; i < islandLocations.Count; i++)
+        {
+            SpawnIsland(
+                islandLocations[i],
+                terrainSettings.voronoiRandSeed + i
+            );
+        }
     }
 
-    private void GenerateVoronoiRegions(int depth, int width, int regionCount, 
-        int seed)
+    /// <summary>
+    /// Creates positions for the islands.
+    /// This is intentionally simple for now.
+    /// Voronoi can replace this later.
+    /// </summary>
+    private void GenerateIslandLocations()
     {
-        // Init region center locations
-        for (int i = 0; i < regionCount; i++)
+        islandLocations.Clear();
+
+        Random.InitState(
+            terrainSettings.voronoiRandSeed
+        );
+
+        int attempts = 0;
+        int maxAttempts = islandCount * 20;
+
+        while (
+            islandLocations.Count < islandCount &&
+            attempts < maxAttempts)
         {
-            
+            attempts++;
+
+            float x =
+                Random.Range(
+                    -terrainSettings.worldWidth * 0.5f,
+                    terrainSettings.worldWidth * 0.5f
+                );
+
+            float z =
+                Random.Range(
+                    -terrainSettings.worldDepth * 0.5f,
+                    terrainSettings.worldDepth * 0.5f
+                );
+
+            Vector3 candidate =
+                new Vector3(x, 0f, z);
+
+            bool tooClose = false;
+
+            foreach (Vector3 existing in islandLocations)
+            {
+                if (Vector3.Distance(
+                        candidate,
+                        existing)
+                    < islandSpacing)
+                {
+                    tooClose = true;
+                    break;
+                }
+            }
+
+            if (!tooClose)
+            {
+                islandLocations.Add(candidate);
+            }
         }
 
+        if (islandLocations.Count < islandCount)
+        {
+            Debug.LogWarning(
+                $"Only generated {islandLocations.Count} " +
+                $"of {islandCount} requested islands."
+            );
+        }
     }
 
     /// <summary>
-    /// Container step in the pipeline that when called 
-    /// can spawn an island at a location
+    /// Generates one island's heightmap and mesh.
     /// </summary>
-    /// <param name="location"></param>
-    private void SpawnIsland(Vector3 location)
+    private void SpawnIsland(
+        Vector3 location,
+        int seed)
     {
+        Debug.Log(
+            $"Generating island at {location} " +
+            $"with seed {seed}"
+        );
 
+        IslandTerrainData terrainData =
+            GenerateIslandTerrain(seed);
+
+        Mesh islandMesh =
+            GenerateTerrainMesh(terrainData);
+
+        GameObject island =
+            new GameObject(
+                $"Island_{generatedIslands.Count}"
+            );
+
+        island.transform.SetParent(
+            islandParent,
+            false
+        );
+
+        island.transform.position = location;
+
+        MeshFilter meshFilter =
+            island.AddComponent<MeshFilter>();
+
+        MeshRenderer meshRenderer =
+            island.AddComponent<MeshRenderer>();
+
+        meshFilter.sharedMesh = islandMesh;
+
+        if (atlasMat != null)
+        {
+            meshRenderer.sharedMaterial = atlasMat;
+        }
+
+        generatedIslands.Add(island);
     }
-    /*
+
     /// <summary>
-    /// Takes a quad from the terrain and maps it to the part of the atlas
+    /// Generates an island heightmap from noise
+    /// and applies a radial island mask.
     /// </summary>
-    /// <param name="uvs">the list of uvs</param>
-    /// <param name="tileX">desired texture column</param>
-    /// <param name="tileY">desired texture row</param>
-    private void AddAtlasUVs(List<Vector2> uvs, int tileX, int tileY)
+    private IslandTerrainData GenerateIslandTerrain(
+        int seed)
     {
-        // Finding the coordinate of the texture needed on the atlas
-        // instead of using the entire texture
-        float tileWidth = 1.0f / atlasSize;
-        float tileHeight = 1.0f / atlasSize;
+        IslandTerrainData terrainData =
+            new IslandTerrainData(
+                terrainSettings.width,
+                terrainSettings.depth,
+                terrainSettings.worldWidth,
+                terrainSettings.worldDepth,
+                terrainSettings.maxHeight
+            );
 
-        float minX = tileX * tileWidth;
-        float minY = tileY * tileHeight;
+        using NativeArray<float> noiseMap =
+            new NativeArray<float>(
+                terrainSettings.width *
+                terrainSettings.depth,
+                Allocator.TempJob
+            );
 
-        float maxX = minX + tileWidth;
-        float maxY = minY + tileHeight;
+        terrainNoise.InitializeNoise(
+            terrainSettings.width,
+            terrainSettings.depth,
+            seed
+        );
 
-        uvs.Add(new Vector2(minX, minY));
-        uvs.Add(new Vector2(minX, maxY));
-        uvs.Add(new Vector2(maxX, minY));
-        uvs.Add(new Vector2(maxX, maxY));
+        terrainNoise.setNoise(
+            noiseMap,
+            0,
+            0
+        );
+
+        for (int x = 0;
+             x < terrainSettings.width;
+             x++)
+        {
+            for (int z = 0;
+                 z < terrainSettings.depth;
+                 z++)
+            {
+                int index =
+                    x * terrainSettings.depth + z;
+
+                float noise =
+                    noiseMap[index];
+
+                float islandMask =
+                    CalculateIslandMask(x, z);
+
+                float shapedHeight =
+                    noise * islandMask;
+
+                // Prevent the center of the island
+                // from becoming too flat or too low.
+                shapedHeight =
+                    Mathf.Max(
+                        terrainSettings.seaLevel,
+                        shapedHeight
+                    );
+
+                terrainData.heightMap[index] =
+                    shapedHeight;
+            }
+        }
+
+        return terrainData;
     }
 
-    // create a new mesh with
-    // perlin noise
-    // makes a quad and connects it with the next quad
-    // uses whatever texture the material is given
-    public Mesh GenerateTerrainMesh(NativeArray<float> heightMap)
+    /// <summary>
+    /// Creates a radial falloff so the noise
+    /// becomes an island instead of an infinite
+    /// terrain field.
+    /// </summary>
+    private float CalculateIslandMask(
+        int x,
+        int z)
     {
-        Debug.Log($"max {heightMap.Max()} min: {heightMap.Min()}");
-        int width = Width, depth = Depth;
-        int height = MaxHeight;
-        int indicesIndex = 0;
-        int vertexIndex = 0;
-        int vertexMultiplier = 4; // create quads to fit uv's to so we can use more than one uv (4 vertices to a quad)
+        float normalizedX =
+            x /
+            (float)(terrainSettings.width - 1);
 
-        Mesh terrainMesh = new Mesh();
-        List<Vector3> vert = new List<Vector3>(width * depth * vertexMultiplier);
-        List<int> indices = new List<int>(width * depth * 6);
-        List<Vector2> uvs = new List<Vector2>(width * depth);
+        float normalizedZ =
+            z /
+            (float)(terrainSettings.depth - 1);
+
+        // Convert 0..1 to -1..1.
+        float centeredX =
+            normalizedX * 2f - 1f;
+
+        float centeredZ =
+            normalizedZ * 2f - 1f;
+
+        float distance =
+            new Vector2(
+                centeredX,
+                centeredZ
+            ).magnitude;
+
+        // Outside the island radius.
+        if (distance >= 1f)
+            return 0f;
+
+        // Controls where the shoreline begins.
+        float innerRadius =
+            terrainSettings.islandRadius;
+
+        float mask =
+            1f -
+            Mathf.InverseLerp(
+                innerRadius,
+                1f,
+                distance
+            );
+
+        // Smooth the edge.
+        mask =
+            mask * mask * (3f - 2f * mask);
+
+        return mask;
+    }
+
+    /// <summary>
+    /// Converts IslandTerrainData into a Unity Mesh.
+    /// </summary>
+    private Mesh GenerateTerrainMesh(
+        IslandTerrainData terrainData)
+    {
+        int width = terrainData.width;
+        int depth = terrainData.depth;
+
+        Mesh mesh = new Mesh();
+
+        Vector3[] vertices =
+            new Vector3[width * depth];
+
+        int[] triangles =
+            new int[
+                (width - 1) *
+                (depth - 1) *
+                6
+            ];
+
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < depth; z++)
             {
-                if (x < (width - 1) && z < (depth - 1))
-                {
-                    // note: since perlin goes up to 1.0 multiplying by a height will tend to set
-                    // the average around maxheight/2. We remove most of that extra by subtracting maxheight/2
-                    // so our ground isn't always way up in the air
-                    float y = heightMap[(x) * (depth) + (z)] * height - (MaxHeight / 2.0f);
-                    float useAltXPlusY = heightMap[(x + 1) * (depth) + (z)] * height - (MaxHeight / 2.0f);
-                    float useAltZPlusY = heightMap[(x) * (depth) + (z + 1)] * height - (MaxHeight / 2.0f);
-                    float useAltXAndZPlusY = heightMap[(x + 1) * (depth) + (z + 1)] * height - (MaxHeight / 2.0f);
-                    float normalizedY = heightMap[(x) * depth + (z)]; // just the height from map
+                int index =
+                    x * depth + z;
 
-                    vert.Add(new float3(x, y, z));
-                    vert.Add(new float3(x, useAltZPlusY, z + 1));
-                    vert.Add(new float3(x + 1, useAltXPlusY, z));
-                    vert.Add(new float3(x + 1, useAltXAndZPlusY, z + 1));
+                float normalizedX =
+                    x /
+                    (float)(width - 1);
 
-                    //Debug.Log($"ny: {normalizedY}");
-                    // add uv's for texture chosen by heightmap
-                    // The coordinates for the textures are hard-coded
-                    if (normalizedY >= iceHeight)
-                    {
-                        AddAtlasUVs(uvs, 1, 0);
-                    }
-                    else if (normalizedY >= snowHeight)
-                    {
-                        AddAtlasUVs(uvs, 0, 1);
-                    }
-                    else if (normalizedY >= grassHeight)
-                    {
-                        AddAtlasUVs(uvs, 0, 0);
-                    }
-                    else
-                    {
-                        AddAtlasUVs(uvs, 1, 1);
-                    }
+                float normalizedZ =
+                    z /
+                    (float)(depth - 1);
 
-                    // front or top face indices for a quad
-                    //0,2,1,0,3,2
-                    indices.Add(vertexIndex);
-                    indices.Add(vertexIndex + 1);
-                    indices.Add(vertexIndex + 2);
-                    indices.Add(vertexIndex + 3);
-                    indices.Add(vertexIndex + 2);
-                    indices.Add(vertexIndex + 1);
-                    indicesIndex += 6;
-                    vertexIndex += vertexMultiplier;
-                }
+                float worldX =
+                    (normalizedX - 0.5f) *
+                    terrainData.worldWidth;
+
+                float worldZ =
+                    (normalizedZ - 0.5f) *
+                    terrainData.worldDepth;
+
+                float worldY =
+                    terrainData.heightMap[index] *
+                    terrainData.maxHeight;
+
+                vertices[index] =
+                    new Vector3(
+                        worldX,
+                        worldY,
+                        worldZ
+                    );
             }
-
         }
 
-        // set the terrain var's for the mesh
-        terrainMesh.vertices = vert.ToArray();
-        terrainMesh.triangles = indices.ToArray();
-        terrainMesh.SetUVs(0, uvs);
+        int triangleIndex = 0;
 
-        // reset the mesh
-        terrainMesh.RecalculateNormals();
-        terrainMesh.RecalculateBounds();
+        for (int x = 0; x < width - 1; x++)
+        {
+            for (int z = 0; z < depth - 1; z++)
+            {
+                int bottomLeft =
+                    x * depth + z;
 
-        return terrainMesh;
+                int bottomRight =
+                    (x + 1) * depth + z;
+
+                int topLeft =
+                    x * depth + (z + 1);
+
+                int topRight =
+                    (x + 1) * depth + (z + 1);
+
+                triangles[triangleIndex++] =
+                    bottomLeft;
+
+                triangles[triangleIndex++] =
+                    topLeft;
+
+                triangles[triangleIndex++] =
+                    bottomRight;
+
+                triangles[triangleIndex++] =
+                    bottomRight;
+
+                triangles[triangleIndex++] =
+                    topLeft;
+
+                triangles[triangleIndex++] =
+                    topRight;
+            }
+        }
+
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+
+        return mesh;
     }
-    */
 
+    /// <summary>
+    /// Deletes the previously generated islands.
+    /// </summary>
+    private void ClearPreviousGeneration()
+    {
+        foreach (GameObject island
+                 in generatedIslands)
+        {
+            if (island != null)
+            {
+                Destroy(island);
+            }
+        }
+
+        generatedIslands.Clear();
+        islandLocations.Clear();
+    }
 }

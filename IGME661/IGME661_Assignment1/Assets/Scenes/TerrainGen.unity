@@ -241,7 +241,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8aeffd727b18564194729cfb86f0e3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGen
-  atlasMat: {fileID: 0}
+  terrainSettings: {fileID: 209106794}
+  atlasMat: {fileID: 2100000, guid: d95c1cfbb9cb84d4a8cd5517d5320085, type: 2}
+  islandCount: 3
+  islandSpacing: 150
+  islandParent: {fileID: 442096503}
 --- !u!114 &209106794
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -256,6 +260,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainSettings
   voronoiRandSeed: 1
   regionCount: 25
+  worldWidth: 100
+  worldDepth: 100
+  maxHeight: 0
+  terrainMaterial: {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
+  frequency: 1
+  amplitude: 0.5
+  lacunarity: 2
+  gain: 0.5
+  octaves: 8
+  scale: 0.01
+  normalizeBias: 1
+  seaLevel: 0.05
+  islandRadius: 0.35
+  width: 129
+  depth: 129
+  atlas: {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}
+  atlasSize: 2
+  grassHeight: 0.42
+  snowHeight: 0.52
+  iceHeight: 0.54
 --- !u!4 &209106795
 Transform:
   m_ObjectHideFlags: 0
@@ -398,6 +422,37 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &442096502
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 442096503}
+  m_Layer: 0
+  m_Name: IslandParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &442096503
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442096502}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: -0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &732768317
 GameObject:
   m_ObjectHideFlags: 0
@@ -452,3 +507,4 @@ SceneRoots:
   - {fileID: 427036062}
   - {fileID: 732768319}
   - {fileID: 209106795}
+  - {fileID: 442096503}
