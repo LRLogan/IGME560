@@ -2,6 +2,11 @@ using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 
+/* Current debugging plan.
+ * This code has a lot of un needed stuff
+ * Just get a heightmap / mesh spawned at a location or look at some more tutorials
+ */
+
 public class TerrainGen : MonoBehaviour
 {
     [Header("Terrain Settings")]
