@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
+using Assets.Scripts;
 
 /* Current debugging plan.
  * This code has a lot of un needed stuff
