@@ -3,46 +3,86 @@ using Unity.Collections;
 using UnityEngine;
 using Assets.Scripts;
 
-/* Current debugging plan.
- * This code has a lot of un needed stuff
- * Just get a heightmap / mesh spawned at a location or look at some more tutorials
- */
-
 public class TerrainGen : MonoBehaviour
 {
     [Header("Terrain Settings")]
     [SerializeField]
     private TerrainSettings terrainSettings;
 
-    [SerializeField]
-    private Material atlasMat;
-
-    [Header("Generation")]
+    [Header("Island Generation")]
     [SerializeField]
     private int islandCount = 3;
 
     [SerializeField]
-    private float islandSpacing = 150f;
+    private float islandSpacing = 600f;
+
+    [SerializeField]
+    private float spawnAreaWidth = 1800f;
+
+    [SerializeField]
+    private float spawnAreaDepth = 1800f;
 
     [SerializeField]
     private Transform islandParent;
 
+    [Header("Debug")]
+    [SerializeField]
+    private bool generateMeshCollider = true;
+
     private NoiseAlgorithm terrainNoise;
 
     private readonly List<GameObject> generatedIslands = new();
+    private readonly List<Mesh> generatedMeshes = new();
     private readonly List<Vector3> islandLocations = new();
 
-    private void Start()
+    private bool initialized;
+
+    private void Awake()
     {
         InitializeGenerator();
     }
 
+    /// <summary>
+    /// Initializes the noise generator and generation parent.
+    /// </summary>
     private void InitializeGenerator()
     {
+        if (initialized)
+            return;
+
         if (terrainSettings == null)
         {
             Debug.LogError(
-                "TerrainGen: No TerrainSettings assigned."
+                "TerrainGen: TerrainSettings has not been assigned."
+            );
+
+            return;
+        }
+
+        if (terrainSettings.width < 2 ||
+            terrainSettings.depth < 2)
+        {
+            Debug.LogError(
+                "TerrainGen: Heightmap width and depth must be at least 2."
+            );
+
+            return;
+        }
+
+        if (terrainSettings.width != terrainSettings.depth)
+        {
+            Debug.LogError(
+                "TerrainGen: For the current NoiseAlgorithm, " +
+                "width and depth should be the same."
+            );
+
+            return;
+        }
+
+        if (terrainSettings.maxHeight <= 0f)
+        {
+            Debug.LogError(
+                "TerrainGen: maxHeight must be greater than 0."
             );
 
             return;
@@ -73,29 +113,39 @@ public class TerrainGen : MonoBehaviour
 
             islandParent = parent.transform;
         }
+
+        initialized = true;
     }
 
     /// <summary>
-    /// Main entry point for full terrain generation.
+    /// Main terrain generation entry point.
+    /// SimManager can call this.
     /// </summary>
     public void StartFullTerrainGen()
     {
+        InitializeGenerator();
+
+        if (!initialized)
+            return;
+
         ClearPreviousGeneration();
 
         GenerateIslandLocations();
 
         for (int i = 0; i < islandLocations.Count; i++)
         {
+            int islandSeed =
+                terrainSettings.voronoiRandSeed + i;
+
             SpawnIsland(
                 islandLocations[i],
-                terrainSettings.voronoiRandSeed + i
+                islandSeed
             );
         }
     }
 
     /// <summary>
-    /// Creates positions for the islands.
-    /// This is intentionally simple for now.
+    /// Creates deterministic random positions for the islands.
     /// Voronoi can replace this later.
     /// </summary>
     private void GenerateIslandLocations()
@@ -107,7 +157,10 @@ public class TerrainGen : MonoBehaviour
         );
 
         int attempts = 0;
-        int maxAttempts = islandCount * 20;
+        int maxAttempts = Mathf.Max(
+            islandCount * 50,
+            50
+        );
 
         while (
             islandLocations.Count < islandCount &&
@@ -115,24 +168,23 @@ public class TerrainGen : MonoBehaviour
         {
             attempts++;
 
-            float x =
-                Random.Range(
-                    -terrainSettings.worldWidth * 0.5f,
-                    terrainSettings.worldWidth * 0.5f
-                );
+            float x = Random.Range(
+                -spawnAreaWidth * 0.5f,
+                spawnAreaWidth * 0.5f
+            );
 
-            float z =
-                Random.Range(
-                    -terrainSettings.worldDepth * 0.5f,
-                    terrainSettings.worldDepth * 0.5f
-                );
+            float z = Random.Range(
+                -spawnAreaDepth * 0.5f,
+                spawnAreaDepth * 0.5f
+            );
 
             Vector3 candidate =
                 new Vector3(x, 0f, z);
 
             bool tooClose = false;
 
-            foreach (Vector3 existing in islandLocations)
+            foreach (Vector3 existing
+                     in islandLocations)
             {
                 if (Vector3.Distance(
                         candidate,
@@ -153,29 +205,41 @@ public class TerrainGen : MonoBehaviour
         if (islandLocations.Count < islandCount)
         {
             Debug.LogWarning(
-                $"Only generated {islandLocations.Count} " +
-                $"of {islandCount} requested islands."
+                $"TerrainGen: Generated " +
+                $"{islandLocations.Count} of " +
+                $"{islandCount} requested islands. " +
+                $"Increase spawn area or decrease island spacing."
             );
         }
     }
 
     /// <summary>
-    /// Generates one island's heightmap and mesh.
+    /// Generates one island's data and creates its mesh object.
     /// </summary>
     private void SpawnIsland(
         Vector3 location,
         int seed)
     {
-        Debug.Log(
-            $"Generating island at {location} " +
-            $"with seed {seed}"
-        );
-
         IslandTerrainData terrainData =
             GenerateIslandTerrain(seed);
 
+        if (terrainData == null)
+            return;
+
         Mesh islandMesh =
             GenerateTerrainMesh(terrainData);
+
+        if (islandMesh == null ||
+            islandMesh.vertexCount == 0 ||
+            islandMesh.triangles.Length == 0)
+        {
+            Debug.LogWarning(
+                $"TerrainGen: Island at {location} " +
+                "did not produce usable geometry."
+            );
+
+            return;
+        }
 
         GameObject island =
             new GameObject(
@@ -187,7 +251,8 @@ public class TerrainGen : MonoBehaviour
             false
         );
 
-        island.transform.position = location;
+        island.transform.position =
+            location;
 
         MeshFilter meshFilter =
             island.AddComponent<MeshFilter>();
@@ -195,21 +260,39 @@ public class TerrainGen : MonoBehaviour
         MeshRenderer meshRenderer =
             island.AddComponent<MeshRenderer>();
 
-        meshFilter.sharedMesh = islandMesh;
+        meshFilter.sharedMesh =
+            islandMesh;
 
-        if (atlasMat != null)
+        if (terrainSettings.terrainMaterial != null)
         {
-            meshRenderer.sharedMaterial = atlasMat;
+            meshRenderer.sharedMaterial =
+                terrainSettings.terrainMaterial;
+        }
+        else
+        {
+            Debug.LogWarning(
+                "TerrainGen: No terrain material assigned."
+            );
+        }
+
+        if (generateMeshCollider)
+        {
+            MeshCollider meshCollider =
+                island.AddComponent<MeshCollider>();
+
+            meshCollider.sharedMesh =
+                islandMesh;
         }
 
         generatedIslands.Add(island);
+        generatedMeshes.Add(islandMesh);
     }
 
     /// <summary>
-    /// Generates an island heightmap from noise
-    /// and applies a radial island mask.
+    /// Generates normalized noise, then applies an island falloff.
     /// </summary>
-    private IslandTerrainData GenerateIslandTerrain(int seed)
+    private IslandTerrainData GenerateIslandTerrain(
+        int seed)
     {
         IslandTerrainData terrainData =
             new IslandTerrainData(
@@ -220,13 +303,18 @@ public class TerrainGen : MonoBehaviour
                 terrainSettings.maxHeight
             );
 
+        int totalSamples =
+            terrainSettings.width *
+            terrainSettings.depth;
+
         using NativeArray<float> noiseMap =
             new NativeArray<float>(
-                terrainSettings.width *
-                terrainSettings.depth,
+                totalSamples,
                 Allocator.TempJob
             );
 
+        // The noise generator uses the seed to create
+        // a deterministic heightmap for this island.
         terrainNoise.InitializeNoise(
             terrainSettings.width,
             terrainSettings.depth,
@@ -251,21 +339,18 @@ public class TerrainGen : MonoBehaviour
                     x * terrainSettings.depth + z;
 
                 float noise =
-                    noiseMap[index];
+                    Mathf.Clamp01(noiseMap[index]);
 
-                float islandMask =
+                float mask =
                     CalculateIslandMask(x, z);
 
                 float height =
-                    noise * islandMask;
+                    noise * mask;
 
-                Debug.Log(x);
-                Debug.Log(z);
-                Debug.Log(islandMask);
                 terrainData.SetIslandMask(
                     x,
                     z,
-                    islandMask
+                    mask
                 );
 
                 terrainData.SetHeight(
@@ -280,31 +365,84 @@ public class TerrainGen : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates a radial falloff so the noise
-    /// becomes an island instead of an infinite
-    /// terrain field.
+    /// Generates a radial falloff.
+    /// Center = 1, edge = 0.
+    /// Multiplying noise by this makes the terrain become an island.
+    /// </summary>
+    private float CalculateIslandMask(
+        int x,
+        int z)
+    {
+        float normalizedX =
+            x /
+            (float)(terrainSettings.width - 1);
+
+        float normalizedZ =
+            z /
+            (float)(terrainSettings.depth - 1);
+
+        // Convert 0..1 into -1..1.
+        float centeredX =
+            normalizedX * 2f - 1f;
+
+        float centeredZ =
+            normalizedZ * 2f - 1f;
+
+        float distance =
+            new Vector2(
+                centeredX,
+                centeredZ
+            ).magnitude;
+
+        float radius =
+            terrainSettings.islandRadius;
+
+        if (distance >= radius)
+            return 0f;
+
+        // 1 at the center, 0 at the radius.
+        float mask =
+            1f - distance / radius;
+
+        // Smoothstep for a softer shoreline.
+        return mask * mask * (3f - 2f * mask);
+    }
+
+    /// <summary>
+    /// Converts the heightmap into an island-shaped mesh.
+    ///
+    /// A quad is only created if its average normalized
+    /// height is above sea level. This is what removes the
+    /// rectangular "outside" portion of the terrain.
     /// </summary>
     private Mesh GenerateTerrainMesh(
         IslandTerrainData terrainData)
     {
-        int width = terrainData.width;
-        int depth = terrainData.depth;
+        int width =
+            terrainData.width;
 
-        Mesh mesh = new Mesh();
+        int depth =
+            terrainData.depth;
+
+        Mesh mesh =
+            new Mesh();
+
+        mesh.name =
+            "Procedural Island";
 
         Vector3[] vertices =
             new Vector3[width * depth];
 
-        int[] triangles =
-            new int[
-                (width - 1) *
-                (depth - 1) *
-                6
-            ];
-
-        for (int x = 0; x < width; x++)
+        // Create all possible vertex positions.
+        // Some vertices will not be referenced if they
+        // fall completely outside the island.
+        for (int x = 0;
+             x < width;
+             x++)
         {
-            for (int z = 0; z < depth; z++)
+            for (int z = 0;
+                 z < depth;
+                 z++)
             {
                 int index =
                     x * depth + z;
@@ -326,7 +464,7 @@ public class TerrainGen : MonoBehaviour
                     terrainData.worldDepth;
 
                 float worldY =
-                    terrainData.heightMap[index] *
+                    terrainData.GetHeight(x, z) *
                     terrainData.maxHeight;
 
                 vertices[index] =
@@ -338,11 +476,23 @@ public class TerrainGen : MonoBehaviour
             }
         }
 
-        int triangleIndex = 0;
+        List<int> triangles =
+            new List<int>(
+                (width - 1) *
+                (depth - 1) *
+                6
+            );
 
-        for (int x = 0; x < width - 1; x++)
+        float seaLevel =
+            terrainSettings.seaLevel;
+
+        for (int x = 0;
+             x < width - 1;
+             x++)
         {
-            for (int z = 0; z < depth - 1; z++)
+            for (int z = 0;
+                 z < depth - 1;
+                 z++)
             {
                 int bottomLeft =
                     x * depth + z;
@@ -356,28 +506,66 @@ public class TerrainGen : MonoBehaviour
                 int topRight =
                     (x + 1) * depth + (z + 1);
 
-                triangles[triangleIndex++] =
-                    bottomLeft;
+                float h00 =
+                    terrainData.GetHeight(
+                        x,
+                        z
+                    );
 
-                triangles[triangleIndex++] =
-                    topLeft;
+                float h10 =
+                    terrainData.GetHeight(
+                        x + 1,
+                        z
+                    );
 
-                triangles[triangleIndex++] =
-                    bottomRight;
+                float h01 =
+                    terrainData.GetHeight(
+                        x,
+                        z + 1
+                    );
 
-                triangles[triangleIndex++] =
-                    bottomRight;
+                float h11 =
+                    terrainData.GetHeight(
+                        x + 1,
+                        z + 1
+                    );
 
-                triangles[triangleIndex++] =
-                    topLeft;
+                // Use the average height of the four
+                // corners to decide whether this grid cell
+                // belongs to the island.
+                float cellHeight =
+                    (h00 + h10 + h01 + h11) * 0.25f;
 
-                triangles[triangleIndex++] =
-                    topRight;
+                if (cellHeight <= seaLevel)
+                    continue;
+
+                // Triangle 1
+                triangles.Add(bottomLeft);
+                triangles.Add(topLeft);
+                triangles.Add(bottomRight);
+
+                // Triangle 2
+                triangles.Add(bottomRight);
+                triangles.Add(topLeft);
+                triangles.Add(topRight);
             }
         }
 
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
+        if (triangles.Count == 0)
+        {
+            Debug.LogWarning(
+                "TerrainGen: Heightmap produced no " +
+                "terrain above sea level."
+            );
+
+            return null;
+        }
+
+        mesh.vertices =
+            vertices;
+
+        mesh.triangles =
+            triangles.ToArray();
 
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
@@ -385,99 +573,8 @@ public class TerrainGen : MonoBehaviour
         return mesh;
     }
 
-    private float CalculateIslandMask(int x, int z)
-    {
-        float normalizedX =
-            x / (float)(terrainSettings.width - 1);
-
-        float normalizedZ =
-            z / (float)(terrainSettings.depth - 1);
-
-        float centeredX =
-            normalizedX * 2f - 1f;
-
-        float centeredZ =
-            normalizedZ * 2f - 1f;
-
-        float distance =
-            new Vector2(
-                centeredX,
-                centeredZ
-            ).magnitude;
-
-        float radius =
-            terrainSettings.islandRadius;
-
-        if (distance >= radius)
-            return 0f;
-
-        float mask =
-            1f - (distance / radius);
-
-        // Smooth the transition.
-        mask =
-            mask * mask * (3f - 2f * mask);
-
-        return mask;
-    }
-
-    #region Helpers
-    private int GetOrCreateVertex(
-    int x,
-    int z,
-    IslandTerrainData terrainData,
-    List<Vector3> vertices,
-    Dictionary<Vector2Int, int> vertexLookup)
-    {
-        Vector2Int coordinate =
-            new Vector2Int(x, z);
-
-        if (vertexLookup.TryGetValue(
-            coordinate,
-            out int existingIndex))
-        {
-            return existingIndex;
-        }
-
-        float normalizedX =
-            x / (float)(terrainData.width - 1);
-
-        float normalizedZ =
-            z / (float)(terrainData.depth - 1);
-
-        float worldX =
-            (normalizedX - 0.5f) *
-            terrainData.worldWidth;
-
-        float worldZ =
-            (normalizedZ - 0.5f) *
-            terrainData.worldDepth;
-
-        float worldY =
-            terrainData.GetHeight(x, z) *
-            terrainData.maxHeight;
-
-        int vertexIndex =
-            vertices.Count;
-
-        vertices.Add(
-            new Vector3(
-                worldX,
-                worldY,
-                worldZ
-            )
-        );
-
-        vertexLookup.Add(
-            coordinate,
-            vertexIndex
-        );
-
-        return vertexIndex;
-    }
-
     /// <summary>
-    /// Deletes the previously generated islands.
+    /// Removes previously generated island objects.
     /// </summary>
     private void ClearPreviousGeneration()
     {
@@ -492,6 +589,6 @@ public class TerrainGen : MonoBehaviour
 
         generatedIslands.Clear();
         islandLocations.Clear();
+        generatedMeshes.Clear();
     }
-    #endregion
 }

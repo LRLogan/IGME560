@@ -1,19 +1,20 @@
 using UnityEngine;
 
 /// <summary>
-/// Container for the various terrain settings
+/// Container for the various terrain generation settings.
 /// </summary>
 public class TerrainSettings : MonoBehaviour
 {
-    [Header("Voronoi and world")] 
+    [Header("World / Generation")]
     public int voronoiRandSeed = 1234;
     public int regionCount = 25;
+
+    [Header("Island Size")]
     public int worldWidth = 500;
     public int worldDepth = 500;
+    public float maxHeight = 100f;
 
-    [Header("Terrain")]
-    public int maxHeight;
-    public Material terrainMaterial;
+    [Header("Noise")]
     public float frequency = 1.0f;
     public float amplitude = 0.5f;
     public float lacunarity = 2.0f;
@@ -21,15 +22,26 @@ public class TerrainSettings : MonoBehaviour
     public int octaves = 8;
     public float scale = 0.1f;
     public float normalizeBias = 1.0f;
+
+    [Header("Island Shape")]
+    [Range(0f, 1f)]
     public float seaLevel = 0.05f;
+
+    [Range(0.1f, 1f)]
     public float islandRadius = 0.8f;
+
+    [Header("Heightmap Resolution")]
     public int width = 129;
     public int depth = 129;
 
-    [Header("Texyure atlas")]
+    [Header("Texture Atlas")]
     public Texture2D atlas;
     public int atlasSize = 2;
+
     public float grassHeight = 0.42f;
     public float snowHeight = 0.52f;
     public float iceHeight = 0.54f;
+
+    [Header("Rendering")]
+    public Material terrainMaterial;
 }

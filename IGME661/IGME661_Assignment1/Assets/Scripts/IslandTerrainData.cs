@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Assets.Scripts
 {
-    internal class IslandTerrainData
+    /// <summary>
+    /// Stores the generated data for one island.
+    /// Heights and masks are normalized to the range 0-1.
+    /// </summary>
+    public class IslandTerrainData
     {
         public readonly int width;
         public readonly int depth;
@@ -30,6 +30,15 @@ namespace Assets.Scripts
 
             if (depth < 2)
                 throw new ArgumentException("Depth must be at least 2.");
+
+            if (worldWidth <= 0)
+                throw new ArgumentException("World width must be greater than 0.");
+
+            if (worldDepth <= 0)
+                throw new ArgumentException("World depth must be greater than 0.");
+
+            if (maxHeight <= 0)
+                throw new ArgumentException("Max height must be greater than 0.");
 
             this.width = width;
             this.depth = depth;
@@ -57,10 +66,14 @@ namespace Assets.Scripts
             heightMap[GetIndex(x, z)] = value;
         }
 
+        public float GetIslandMask(int x, int z)
+        {
+            return islandMask[GetIndex(x, z)];
+        }
+
         public void SetIslandMask(int x, int z, float value)
         {
             islandMask[GetIndex(x, z)] = value;
         }
-
     }
 }
