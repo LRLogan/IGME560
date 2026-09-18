@@ -22,13 +22,15 @@ public class TerrainSettings : MonoBehaviour
     public int octaves = 5;
     public float scale = 0.1f;
     public float normalizeBias = 1.0f;
+    public int perlinSeed = 1234;
+    public float perlinMaskScale = 0.5f;
 
     [Header("Island Shape")]
     [Range(0f, 1f)]
     public float seaLevel = 0.05f;
 
     [Range(0.1f, 1f)]
-    public float islandRadius = 0.8f;
+    public float islandMaxRadius = 0.8f;
 
     [Header("Heightmap Resolution")]
     public int width = 129;

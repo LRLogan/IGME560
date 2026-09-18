@@ -1,7 +1,8 @@
+using Assets.Scripts;
 using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
-using Assets.Scripts;
+using UnityEngine.UIElements;
 
 public class TerrainGen : MonoBehaviour
 {
@@ -348,7 +349,7 @@ public class TerrainGen : MonoBehaviour
                     CalculateIslandMask(x, z);
 
                 float height =
-                    noise * mask;
+                    noise;
 
                 terrainData.SetIslandMask(
                     x,
@@ -372,10 +373,18 @@ public class TerrainGen : MonoBehaviour
     /// Center = 1, edge = 0.
     /// Multiplying noise by this makes the terrain become an island.
     /// </summary>
-    private float CalculateIslandMask(
-        int x,
-        int z)
+    private float CalculateIslandMask(int x, int z)
     {
+        // Getting the perlin mask for shape
+        float mask;
+        float xCoord = terrainSettings.perlinSeed + (float)x / terrainSettings.width * terrainSettings.perlinMaskScale;
+        float yCoord = terrainSettings.perlinSeed + (float)z / terrainSettings.depth * terrainSettings.perlinMaskScale;
+
+        mask = Mathf.PerlinNoise(xCoord, yCoord);
+
+        // Getting the perlin mask for height
+
+        // Normalize
         float normalizedX =
             x /
             (float)(terrainSettings.width - 1);
@@ -391,6 +400,12 @@ public class TerrainGen : MonoBehaviour
         float centeredZ =
             normalizedZ * 2f - 1f;
 
+        // Scaling / aspect ratio os island 
+        float shapeScaleX = 1.0f;
+        float shapeScaleY = 1f;
+        centeredX *= shapeScaleX;
+        centeredZ *= shapeScaleY;
+
         float distance =
             new Vector2(
                 centeredX,
@@ -398,17 +413,13 @@ public class TerrainGen : MonoBehaviour
             ).magnitude;
 
         float radius =
-            terrainSettings.islandRadius;
+            terrainSettings.islandMaxRadius;
 
         if (distance >= radius)
             return 0f;
 
-        // 1 at the center, 0 at the radius.
-        float mask =
-            1f - distance / radius;
-
         // Smoothstep for a softer shoreline.
-        return mask * mask * (3f - 2f * mask);
+        return /*mask * mask * (3f - 2f * mask)*/ 1 /*<-temp*/;
     }
 
     /// <summary>
