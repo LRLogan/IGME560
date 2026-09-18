@@ -19,7 +19,7 @@ public class TerrainSettings : MonoBehaviour
     public float amplitude = 0.5f;
     public float lacunarity = 2.0f;
     public float gain = 0.5f;
-    public int octaves = 8;
+    public int octaves = 5;
     public float scale = 0.1f;
     public float normalizeBias = 1.0f;
 

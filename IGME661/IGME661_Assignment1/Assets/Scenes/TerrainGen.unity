@@ -242,8 +242,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGen
   terrainSettings: {fileID: 209106794}
-  islandCount: 3
-  islandSpacing: 150
+  islandCount: 5
+  islandSpacing: 100
   spawnAreaWidth: 1800
   spawnAreaDepth: 1800
   islandParent: {fileID: 442096503}
@@ -268,12 +268,12 @@ MonoBehaviour:
   frequency: 1
   amplitude: 0.5
   lacunarity: 2
-  gain: 0.5
-  octaves: 8
+  gain: 0.3
+  octaves: 5
   scale: 0.1
   normalizeBias: 1
   seaLevel: 0.05
-  islandRadius: 0.8
+  islandRadius: 0.464
   width: 129
   depth: 129
   atlas: {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}

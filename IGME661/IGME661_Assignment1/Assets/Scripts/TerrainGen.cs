@@ -14,7 +14,7 @@ public class TerrainGen : MonoBehaviour
     private int islandCount = 3;
 
     [SerializeField]
-    private float islandSpacing = 600f;
+    private float islandSpacing = 500f;
 
     [SerializeField]
     private float spawnAreaWidth = 1800f;
@@ -47,6 +47,7 @@ public class TerrainGen : MonoBehaviour
     /// </summary>
     private void InitializeGenerator()
     {
+        #region Initial dependency checks
         if (initialized)
             return;
 
@@ -87,6 +88,7 @@ public class TerrainGen : MonoBehaviour
 
             return;
         }
+        #endregion
 
         terrainNoise = new NoiseAlgorithm();
 
@@ -327,6 +329,7 @@ public class TerrainGen : MonoBehaviour
             0
         );
 
+        // Iterating over heightmap to set height values
         for (int x = 0;
              x < terrainSettings.width;
              x++)
