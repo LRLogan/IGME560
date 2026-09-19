@@ -276,7 +276,7 @@ MonoBehaviour:
   worldDepth: 500
   maxHeight: 100
   seaLevel: 0.05
-  islandMaxRadius: 0.8
+  islandMaxRadius: 0.586
   shapeScaleX: 1.2
   shapeScaleZ: 1
   shapeNoiseStrength: 0.5
