@@ -219,9 +219,7 @@ public class TerrainGen : MonoBehaviour
     /// <summary>
     /// Generates one island's data and creates its mesh object.
     /// </summary>
-    private void SpawnIsland(
-        Vector3 location,
-        int seed)
+    private void SpawnIsland(Vector3 location, int seed)
     {
         IslandTerrainData terrainData =
             GenerateIslandTerrain(seed);
@@ -291,11 +289,7 @@ public class TerrainGen : MonoBehaviour
         generatedMeshes.Add(islandMesh);
     }
 
-    /// <summary>
-    /// Generates normalized noise, then applies an island falloff.
-    /// </summary>
-    private IslandTerrainData GenerateIslandTerrain(
-        int seed)
+    private IslandTerrainData GenerateIslandTerrain(int seed)
     {
         IslandTerrainData terrainData =
             new IslandTerrainData(
@@ -316,8 +310,6 @@ public class TerrainGen : MonoBehaviour
                 Allocator.TempJob
             );
 
-        // The noise generator uses the seed to create
-        // a deterministic heightmap for this island.
         terrainNoise.InitializeNoise(
             terrainSettings.width,
             terrainSettings.depth,
@@ -330,7 +322,19 @@ public class TerrainGen : MonoBehaviour
             0
         );
 
-        // Iterating over heightmap to set height values
+
+        // ---------------------------------------------
+        // SHAPE MASK
+        // ---------------------------------------------
+
+        float[] shapeMask =
+            GenerateIslandShapeMask(seed);
+
+
+        // ---------------------------------------------
+        // HEIGHT + SHAPE
+        // ---------------------------------------------
+
         for (int x = 0;
              x < terrainSettings.width;
              x++)
@@ -342,25 +346,105 @@ public class TerrainGen : MonoBehaviour
                 int index =
                     x * terrainSettings.depth + z;
 
-                float noise =
-                    Mathf.Clamp01(noiseMap[index]);
+                float shape =
+                    shapeMask[index];
 
-                float mask =
-                    CalculateIslandMask(x, z);
 
-                float height =
-                    noise;
+                // -----------------------------------------
+                // Main terrain noise
+                // -----------------------------------------
+
+                float terrainNoiseValue =
+                    Mathf.Clamp01(
+                        noiseMap[index]
+                    );
+
+
+                // -----------------------------------------
+                // Independent height mask
+                // -----------------------------------------
+
+                float heightX =
+                    terrainSettings.perlinSeed +
+                    seed * 37.71f +
+                    (float)x /
+                    (terrainSettings.width - 1) *
+                    terrainSettings.perlinHeightScale;
+
+                float heightZ =
+                    terrainSettings.perlinSeed +
+                    seed * 37.71f +
+                    (float)z /
+                    (terrainSettings.depth - 1) *
+                    terrainSettings.perlinHeightScale;
+
+                float heightMask =
+                    Mathf.PerlinNoise(
+                        heightX,
+                        heightZ
+                    );
+
+
+                // -----------------------------------------
+                // Calculate land elevation
+                // -----------------------------------------
+
+                float landHeight =
+                    terrainNoiseValue;
+
+                float heightModifier =
+                    Mathf.Lerp(
+                        1f -
+                        terrainSettings.heightMaskStrength,
+
+                        1f +
+                        terrainSettings.heightMaskStrength,
+
+                        heightMask
+                    );
+
+                landHeight *=
+                    heightModifier;
+
+                landHeight =
+                    Mathf.Clamp01(
+                        landHeight
+                    );
+
+
+                // -----------------------------------------
+                // Keep the outside of the island
+                // slightly below sea level
+                // -----------------------------------------
+
+                float underwaterHeight =
+                    Mathf.Max(
+                        0f,
+                        terrainSettings.seaLevel -
+                        terrainSettings.underwaterDepth
+                    );
+
+
+                // Shape mask controls whether we use
+                // underwater terrain or land terrain.
+                float finalHeight =
+                    Mathf.Lerp(
+                        underwaterHeight,
+                        landHeight,
+                        shape
+                    );
+
 
                 terrainData.SetIslandMask(
                     x,
                     z,
-                    mask
+                    shape
                 );
 
                 terrainData.SetHeight(
                     x,
                     z,
-                    height
+                    finalHeight
                 );
             }
         }
@@ -369,57 +453,278 @@ public class TerrainGen : MonoBehaviour
     }
 
     /// <summary>
-    /// Generates a radial falloff.
-    /// Center = 1, edge = 0.
-    /// Multiplying noise by this makes the terrain become an island.
+    /// Generates the island's actual footprint from a 2D noise field.
+    ///
+    /// Noise values below the threshold are considered water.
+    /// Values above the threshold are considered land.
+    ///
+    /// A connected-region pass ensures that we get one island
+    /// instead of several unrelated blobs of land.
     /// </summary>
-    private float CalculateIslandMask(int x, int z)
+    private float[] GenerateIslandShapeMask(int seed)
     {
-        // Getting the perlin mask for shape
-        float mask;
-        float xCoord = terrainSettings.perlinSeed + (float)x / terrainSettings.width * terrainSettings.perlinMaskScale;
-        float yCoord = terrainSettings.perlinSeed + (float)z / terrainSettings.depth * terrainSettings.perlinMaskScale;
+        int width = terrainSettings.width;
+        int depth = terrainSettings.depth;
 
-        mask = Mathf.PerlinNoise(xCoord, yCoord);
+        int totalSamples = width * depth;
 
-        // Getting the perlin mask for height
+        float[] mask = new float[totalSamples];
 
-        // Normalize
-        float normalizedX =
-            x /
-            (float)(terrainSettings.width - 1);
+        // Stores whether each sample is above the
+        // shape-noise threshold.
+        bool[] landCandidates =
+            new bool[totalSamples];
 
-        float normalizedZ =
-            z /
-            (float)(terrainSettings.depth - 1);
+        // ---------------------------------------------
+        // 1. Generate the raw thresholded noise field
+        // ---------------------------------------------
 
-        // Convert 0..1 into -1..1.
-        float centeredX =
-            normalizedX * 2f - 1f;
+        for (int x = 0; x < width; x++)
+        {
+            for (int z = 0; z < depth; z++)
+            {
+                int index =
+                    x * depth + z;
 
-        float centeredZ =
-            normalizedZ * 2f - 1f;
+                float normalizedX =
+                    x / (float)(width - 1);
 
-        // Scaling / aspect ratio os island 
-        float shapeScaleX = 1.0f;
-        float shapeScaleY = 1f;
-        centeredX *= shapeScaleX;
-        centeredZ *= shapeScaleY;
+                float normalizedZ =
+                    z / (float)(depth - 1);
 
-        float distance =
-            new Vector2(
-                centeredX,
-                centeredZ
-            ).magnitude;
+                // Convert to coordinates centered around the island.
+                float centeredX =
+                    normalizedX * 2f - 1f;
 
-        float radius =
-            terrainSettings.islandMaxRadius;
+                float centeredZ =
+                    normalizedZ * 2f - 1f;
 
-        if (distance >= radius)
-            return 0f;
+                // Aspect ratio of the area being sampled.
+                centeredX /= terrainSettings.shapeScaleX;
+                centeredZ /= terrainSettings.shapeScaleZ;
 
-        // Smoothstep for a softer shoreline.
-        return /*mask * mask * (3f - 2f * mask)*/ 1 /*<-temp*/;
+                // Convert back into a convenient 0-1 space.
+                float sampleX =
+                    (centeredX + 1f) * 0.5f;
+
+                float sampleZ =
+                    (centeredZ + 1f) * 0.5f;
+
+                float noiseX =
+                    terrainSettings.perlinSeed +
+                    seed * 13.17f +
+                    sampleX *
+                    terrainSettings.perlinMaskScale;
+
+                float noiseZ =
+                    terrainSettings.perlinSeed +
+                    seed * 13.17f +
+                    sampleZ *
+                    terrainSettings.perlinMaskScale;
+
+                float noise =
+                    Mathf.PerlinNoise(
+                        noiseX,
+                        noiseZ
+                    );
+
+                // Outside the maximum allowed island area.
+                float distance =
+                    new Vector2(
+                        centeredX,
+                        centeredZ
+                    ).magnitude;
+
+                if (distance >
+                    terrainSettings.islandMaxRadius)
+                {
+                    landCandidates[index] = false;
+                    continue;
+                }
+
+                // The noise itself determines whether this
+                // location belongs to the island.
+                landCandidates[index] =
+                    noise >=
+                    terrainSettings.perlinShapeThreshold;
+            }
+        }
+
+
+        // ---------------------------------------------
+        // 2. Find a starting land point
+        // ---------------------------------------------
+
+        int startIndex =
+            FindIslandStart(
+                landCandidates,
+                width,
+                depth
+            );
+
+        if (startIndex == -1)
+        {
+            Debug.LogWarning(
+                "Island generation failed: " +
+                "no noise region was above the shape threshold."
+            );
+
+            return mask;
+        }
+
+
+        // ---------------------------------------------
+        // 3. Flood-fill the connected region
+        // ---------------------------------------------
+
+        bool[] connected =
+            new bool[totalSamples];
+
+        Queue<int> queue =
+            new Queue<int>();
+
+        queue.Enqueue(startIndex);
+        connected[startIndex] = true;
+
+        while (queue.Count > 0)
+        {
+            int current =
+                queue.Dequeue();
+
+            int x =
+                current / depth;
+
+            int z =
+                current % depth;
+
+            // 8-neighbor search allows diagonal
+            // pixels to belong to the same landmass.
+            for (int offsetX = -1;
+                 offsetX <= 1;
+                 offsetX++)
+            {
+                for (int offsetZ = -1;
+                     offsetZ <= 1;
+                     offsetZ++)
+                {
+                    if (offsetX == 0 &&
+                        offsetZ == 0)
+                    {
+                        continue;
+                    }
+
+                    int neighborX =
+                        x + offsetX;
+
+                    int neighborZ =
+                        z + offsetZ;
+
+                    if (neighborX < 0 ||
+                        neighborX >= width ||
+                        neighborZ < 0 ||
+                        neighborZ >= depth)
+                    {
+                        continue;
+                    }
+
+                    int neighborIndex =
+                        neighborX * depth + neighborZ;
+
+                    if (!landCandidates[neighborIndex] ||
+                        connected[neighborIndex])
+                    {
+                        continue;
+                    }
+
+                    connected[neighborIndex] = true;
+
+                    queue.Enqueue(
+                        neighborIndex
+                    );
+                }
+            }
+        }
+
+
+        // ---------------------------------------------
+        // 4. Convert the connected region into
+        //    the final island mask
+        // ---------------------------------------------
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int z = 0; z < depth; z++)
+            {
+                int index =
+                    x * depth + z;
+
+                if (!connected[index])
+                {
+                    mask[index] = 0f;
+                    continue;
+                }
+
+                // Hard threshold by default.
+                mask[index] = 1f;
+            }
+        }
+
+        return mask;
+    }
+
+    /// <summary>
+    /// Finds the nearest valid land sample to the center
+    /// of the heightmap.
+    ///
+    /// This gives the flood-fill a deterministic starting
+    /// point for the main island.
+    /// </summary>
+    private int FindIslandStart(
+        bool[] landCandidates,
+        int width,
+        int depth)
+    {
+        int centerX =
+            width / 2;
+
+        int centerZ =
+            depth / 2;
+
+        int maxSearchRadius =
+            Mathf.Max(width, depth);
+
+        for (int radius = 0;
+             radius < maxSearchRadius;
+             radius++)
+        {
+            for (int x = centerX - radius;
+                 x <= centerX + radius;
+                 x++)
+            {
+                for (int z = centerZ - radius;
+                     z <= centerZ + radius;
+                     z++)
+                {
+                    if (x < 0 ||
+                        x >= width ||
+                        z < 0 ||
+                        z >= depth)
+                    {
+                        continue;
+                    }
+
+                    int index =
+                        x * depth + z;
+
+                    if (landCandidates[index])
+                    {
+                        return index;
+                    }
+                }
+            }
+        }
+
+        return -1;
     }
 
     /// <summary>
@@ -430,7 +735,7 @@ public class TerrainGen : MonoBehaviour
     /// rectangular "outside" portion of the terrain.
     /// </summary>
     private Mesh GenerateTerrainMesh(
-        IslandTerrainData terrainData)
+    IslandTerrainData terrainData)
     {
         int width =
             terrainData.width;
@@ -447,16 +752,13 @@ public class TerrainGen : MonoBehaviour
         Vector3[] vertices =
             new Vector3[width * depth];
 
-        // Create all possible vertex positions.
-        // Some vertices will not be referenced if they
-        // fall completely outside the island.
-        for (int x = 0;
-             x < width;
-             x++)
+        // -------------------------------------------------
+        // CREATE VERTICES
+        // -------------------------------------------------
+
+        for (int x = 0; x < width; x++)
         {
-            for (int z = 0;
-                 z < depth;
-                 z++)
+            for (int z = 0; z < depth; z++)
             {
                 int index =
                     x * depth + z;
@@ -490,6 +792,11 @@ public class TerrainGen : MonoBehaviour
             }
         }
 
+
+        // -------------------------------------------------
+        // CREATE TRIANGLES
+        // -------------------------------------------------
+
         List<int> triangles =
             new List<int>(
                 (width - 1) *
@@ -497,17 +804,47 @@ public class TerrainGen : MonoBehaviour
                 6
             );
 
-        float seaLevel =
-            terrainSettings.seaLevel;
-
-        for (int x = 0;
-             x < width - 1;
-             x++)
+        for (int x = 0; x < width - 1; x++)
         {
-            for (int z = 0;
-                 z < depth - 1;
-                 z++)
+            for (int z = 0; z < depth - 1; z++)
             {
+                float mask00 =
+                    terrainData.GetIslandMask(
+                        x,
+                        z
+                    );
+
+                float mask10 =
+                    terrainData.GetIslandMask(
+                        x + 1,
+                        z
+                    );
+
+                float mask01 =
+                    terrainData.GetIslandMask(
+                        x,
+                        z + 1
+                    );
+
+                float mask11 =
+                    terrainData.GetIslandMask(
+                        x + 1,
+                        z + 1
+                    );
+
+                // If all four corners are outside the island,
+                // don't create this quad.
+                //
+                // This is what makes the visible mesh conform
+                // to the island shape instead of remaining a square.
+                if (mask00 <= 0f &&
+                    mask10 <= 0f &&
+                    mask01 <= 0f &&
+                    mask11 <= 0f)
+                {
+                    continue;
+                }
+
                 int bottomLeft =
                     x * depth + z;
 
@@ -519,39 +856,6 @@ public class TerrainGen : MonoBehaviour
 
                 int topRight =
                     (x + 1) * depth + (z + 1);
-
-                float h00 =
-                    terrainData.GetHeight(
-                        x,
-                        z
-                    );
-
-                float h10 =
-                    terrainData.GetHeight(
-                        x + 1,
-                        z
-                    );
-
-                float h01 =
-                    terrainData.GetHeight(
-                        x,
-                        z + 1
-                    );
-
-                float h11 =
-                    terrainData.GetHeight(
-                        x + 1,
-                        z + 1
-                    );
-
-                // Use the average height of the four
-                // corners to decide whether this grid cell
-                // belongs to the island.
-                float cellHeight =
-                    (h00 + h10 + h01 + h11) * 0.25f;
-
-                if (cellHeight <= seaLevel)
-                    continue;
 
                 // Triangle 1
                 triangles.Add(bottomLeft);
@@ -568,8 +872,7 @@ public class TerrainGen : MonoBehaviour
         if (triangles.Count == 0)
         {
             Debug.LogWarning(
-                "TerrainGen: Heightmap produced no " +
-                "terrain above sea level."
+                "TerrainGen: No island geometry was generated."
             );
 
             return null;
@@ -585,6 +888,47 @@ public class TerrainGen : MonoBehaviour
         mesh.RecalculateBounds();
 
         return mesh;
+    }
+
+    /// <summary>
+    /// Creates a separate low-frequency noise field used
+    /// to modify terrain elevation without changing the
+    /// island's overall silhouette.
+    /// </summary>
+    private float CalculateHeightMask(
+        int x,
+        int z,
+        int seed)
+    {
+        float normalizedX =
+            x /
+            (float)(terrainSettings.width - 1);
+
+        float normalizedZ =
+            z /
+            (float)(terrainSettings.depth - 1);
+
+        // Offset the height noise differently from
+        // the shape noise so the two patterns remain independent.
+        float seedOffset =
+            seed * 31.739f;
+
+        float heightX =
+            terrainSettings.perlinSeed +
+            seedOffset +
+            normalizedX *
+            terrainSettings.perlinHeightScale;
+
+        float heightZ =
+            terrainSettings.perlinSeed +
+            seedOffset +
+            normalizedZ *
+            terrainSettings.perlinHeightScale;
+
+        return Mathf.PerlinNoise(
+            heightX,
+            heightZ
+        );
     }
 
     /// <summary>

@@ -9,10 +9,10 @@ public class TerrainSettings : MonoBehaviour
     public int voronoiRandSeed = 1234;
     public int regionCount = 25;
 
-    [Header("Island Size")]
-    public int worldWidth = 500;
-    public int worldDepth = 500;
-    public float maxHeight = 100f;
+
+    [Header("Heightmap Resolution")]
+    public int width = 129;
+    public int depth = 129;
 
     [Header("Noise")]
     public float frequency = 1.0f;
@@ -23,7 +23,13 @@ public class TerrainSettings : MonoBehaviour
     public float scale = 0.1f;
     public float normalizeBias = 1.0f;
     public int perlinSeed = 1234;
-    public float perlinMaskScale = 0.5f;
+
+
+    [Header("Island Size")]
+    public int worldWidth = 500;
+    public int worldDepth = 500;
+    public float maxHeight = 100f;
+
 
     [Header("Island Shape")]
     [Range(0f, 1f)]
@@ -31,10 +37,29 @@ public class TerrainSettings : MonoBehaviour
 
     [Range(0.1f, 1f)]
     public float islandMaxRadius = 0.8f;
+    public float shapeScaleX = 1.2f;
+    public float shapeScaleZ = 1.0f;
+    [Range(0f, 0.5f)]
+    public float shapeNoiseStrength = 1.0f;
+    [Tooltip("How many large noise features exist across the island map.")]
+    public float perlinMaskScale = 2.5f;
+    [Range(0f, 0.25f)]
+    [Tooltip("Softens the threshold boundary.")]
+    public float perlinShapeSoftness = 0.05f;
+    [Range(0f, 1f)]
+    [Tooltip("Only noise values above this become land.")]
+    public float perlinShapeThreshold = 0.55f;
 
-    [Header("Heightmap Resolution")]
-    public int width = 129;
-    public int depth = 129;
+
+    [Header("Island Height")]
+    public float perlinHeightScale = 1.25f;
+
+    [Range(0f, 1f)]
+    public float heightMaskStrength = 0.25f;
+
+    [Range(0f, 0.1f)]
+    public float underwaterDepth = 0.01f;
+
 
     [Header("Texture Atlas")]
     public Texture2D atlas;
@@ -43,6 +68,7 @@ public class TerrainSettings : MonoBehaviour
     public float grassHeight = 0.42f;
     public float snowHeight = 0.52f;
     public float iceHeight = 0.54f;
+
 
     [Header("Rendering")]
     public Material terrainMaterial;

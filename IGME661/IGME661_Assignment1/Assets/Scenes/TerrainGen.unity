@@ -262,9 +262,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainSettings
   voronoiRandSeed: 1
   regionCount: 25
-  worldWidth: 500
-  worldDepth: 500
-  maxHeight: 100
+  width: 129
+  depth: 129
   frequency: 1
   amplitude: 0.5
   lacunarity: 2
@@ -272,10 +271,21 @@ MonoBehaviour:
   octaves: 5
   scale: 0.1
   normalizeBias: 1
+  perlinSeed: 1234
+  worldWidth: 500
+  worldDepth: 500
+  maxHeight: 100
   seaLevel: 0.05
-  islandRadius: 0.464
-  width: 129
-  depth: 129
+  islandMaxRadius: 0.8
+  shapeScaleX: 1.2
+  shapeScaleZ: 1
+  shapeNoiseStrength: 0.5
+  perlinMaskScale: 0.5
+  perlinShapeSoftness: 0.05
+  perlinShapeThreshold: 0.386
+  perlinHeightScale: 1.25
+  heightMaskStrength: 0.25
+  underwaterDepth: 0.01
   atlas: {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}
   atlasSize: 2
   grassHeight: 0.42
