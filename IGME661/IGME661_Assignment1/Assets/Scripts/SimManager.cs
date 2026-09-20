@@ -12,7 +12,7 @@ public class SimManager : MonoBehaviour
     void Start()
     {
         // Generate the texture atlas if needed
-        //atlasGen.GenerateTextureAtlas();
+        atlasGen.GenerateTextureAtlas();
         terrainGen.StartFullTerrainGen();
     }
 

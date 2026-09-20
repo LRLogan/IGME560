@@ -59,16 +59,6 @@ public class TerrainSettings : MonoBehaviour
 
     public float underwaterDepth = 0.01f;
 
-
-    [Header("Texture Atlas")]
-    public Texture2D atlas;
-    public int atlasSize = 2;
-
-    public float grassHeight = 0.42f;
-    public float snowHeight = 0.52f;
-    public float iceHeight = 0.54f;
-
-
     [Header("Rendering")]
     public Material terrainMaterial;
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -20,17 +21,8 @@ public class AtlasGen : MonoBehaviour
     private int pixelHeight = 64;
     private static List<TextureUV> textureUVs;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    [SerializeField] private string outputDirName;
+    [SerializeField] private string outputFileName;
 
     /// <summary>
     /// 
@@ -39,7 +31,7 @@ public class AtlasGen : MonoBehaviour
     /// <param name="outputFileName"></param>
     /// <param name="imageSize"></param>
     /// <returns>-1 error, 0 already made, 1 Atlas made</returns>
-    public int GenerateTextureAtlas(string outputDirName, string outputFileName, int imageSize)
+    public int GenerateTextureAtlas()
     {
         // Early exits
         if (textures.Count == 0) return -1;
@@ -48,8 +40,8 @@ public class AtlasGen : MonoBehaviour
         #region Raw atlas file setup
         // Take the image size into the function
         // Assume all images are a power of 2 and square
-        pixelWidth = imageSize;
-        pixelHeight = imageSize;
+        pixelWidth = imgSize;
+        pixelHeight = imgSize;
 
         // Make the list of uvs
         textureUVs = new List<TextureUV>(textures.Count);
@@ -63,7 +55,7 @@ public class AtlasGen : MonoBehaviour
 
         if (squareRoot * (squareRoot - 1) > textures.Count)
         {
-            squareRootH = squareRootH - 1;
+            squareRootH--;
             atlasHeight = squareRootH * pixelHeight;
         }
 
