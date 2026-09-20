@@ -9,6 +9,14 @@ namespace Assets.Scripts
 {
     internal static class UtilsC
     {
+        /// <summary>
+        /// Assumes that the atlas has Read/Write enabled in unity import settings
+        /// </summary>
+        /// <param name="atlas">the atlas</param>
+        /// <param name="atlasSize">size in px of the atlas</param>
+        /// <param name="texCount">how many textures are on the atlas</param>
+        /// <param name="texSize">texture size in px</param>
+        /// <returns></returns>
         public static Texture2D[] UnpackAtlas(Texture2D atlas, int atlasSize, int texCount, int texSize)
         {
             Texture2D[] textures = new Texture2D[texCount];
