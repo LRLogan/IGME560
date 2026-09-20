@@ -285,7 +285,7 @@ MonoBehaviour:
   perlinShapeThreshold: 0.324
   perlinHeightScale: 1.25
   heightMaskStrength: 0.664
-  underwaterDepth: 0
+  underwaterDepth: 0.5
   atlas: {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}
   atlasSize: 2
   grassHeight: 0.42

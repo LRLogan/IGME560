@@ -57,7 +57,6 @@ public class TerrainSettings : MonoBehaviour
     [Range(0f, 1f)]
     public float heightMaskStrength = 0.25f;
 
-    [Range(0f, 0.1f)]
     public float underwaterDepth = 0.01f;
 
 
