@@ -679,10 +679,7 @@ public class TerrainGen : MonoBehaviour
     /// This gives the flood-fill a deterministic starting
     /// point for the main island.
     /// </summary>
-    private int FindIslandStart(
-        bool[] landCandidates,
-        int width,
-        int depth)
+    private int FindIslandStart(bool[] landCandidates, int width, int depth)
     {
         int centerX =
             width / 2;
@@ -734,53 +731,32 @@ public class TerrainGen : MonoBehaviour
     /// height is above sea level. This is what removes the
     /// rectangular "outside" portion of the terrain.
     /// </summary>
-    private Mesh GenerateTerrainMesh(
-    IslandTerrainData terrainData)
+    private Mesh GenerateTerrainMesh( IslandTerrainData terrainData)
     {
-        int width =
-            terrainData.width;
+        int width = terrainData.width;
+        int depth = terrainData.depth;
+        Mesh mesh = new Mesh();
 
-        int depth =
-            terrainData.depth;
+        mesh.name = "Procedural Island";
 
-        Mesh mesh =
-            new Mesh();
+        Vector3[] vertices = new Vector3[width * depth];
+        List<Vector2> uvs = new List<Vector2>();
 
-        mesh.name =
-            "Procedural Island";
-
-        Vector3[] vertices =
-            new Vector3[width * depth];
-
-        // -------------------------------------------------
-        // CREATE VERTICES
-        // -------------------------------------------------
-
+        // Create Verts
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < depth; z++)
             {
-                int index =
-                    x * depth + z;
-
-                float normalizedX =
-                    x /
-                    (float)(width - 1);
-
-                float normalizedZ =
-                    z /
-                    (float)(depth - 1);
-
-                float worldX =
-                    (normalizedX - 0.5f) *
+                int index = x * depth + z;
+                float normalizedX = x / (float)(width - 1);
+                float normalizedZ = z / (float)(depth - 1);
+                float worldX = (normalizedX - 0.5f) *
                     terrainData.worldWidth;
 
-                float worldZ =
-                    (normalizedZ - 0.5f) *
+                float worldZ = (normalizedZ - 0.5f) *
                     terrainData.worldDepth;
 
-                float worldY =
-                    terrainData.GetHeight(x, z) *
+                float worldY = terrainData.GetHeight(x, z) *
                     terrainData.maxHeight;
 
                 vertices[index] =
@@ -792,22 +768,16 @@ public class TerrainGen : MonoBehaviour
             }
         }
 
+        // Create Tris
+        List<int> triangles = new List<int>( 
+            (width - 1) * (depth - 1) * 6);
 
-        // -------------------------------------------------
-        // CREATE TRIANGLES
-        // -------------------------------------------------
-
-        List<int> triangles =
-            new List<int>(
-                (width - 1) *
-                (depth - 1) *
-                6
-            );
-
+        // Create the mesh
         for (int x = 0; x < width - 1; x++)
         {
             for (int z = 0; z < depth - 1; z++)
             {
+                // Finding if the quad is part of the island shape from a mask
                 float mask00 =
                     terrainData.GetIslandMask(
                         x,
@@ -834,28 +804,16 @@ public class TerrainGen : MonoBehaviour
 
                 // If all four corners are outside the island,
                 // don't create this quad.
-                //
-                // This is what makes the visible mesh conform
-                // to the island shape instead of remaining a square.
                 if (mask00 <= 0f &&
                     mask10 <= 0f &&
                     mask01 <= 0f &&
                     mask11 <= 0f)
-                {
-                    continue;
-                }
+                { continue; }
 
-                int bottomLeft =
-                    x * depth + z;
-
-                int bottomRight =
-                    (x + 1) * depth + z;
-
-                int topLeft =
-                    x * depth + (z + 1);
-
-                int topRight =
-                    (x + 1) * depth + (z + 1);
+                int bottomLeft = x * depth + z;
+                int bottomRight = (x + 1) * depth + z;
+                int topLeft = x * depth + (z + 1);
+                int topRight =  (x + 1) * depth + (z + 1);
 
                 // Triangle 1
                 triangles.Add(bottomLeft);
@@ -866,6 +824,51 @@ public class TerrainGen : MonoBehaviour
                 triangles.Add(bottomRight);
                 triangles.Add(topLeft);
                 triangles.Add(topRight);
+
+                // Determine texture for this quad
+                // Find the deciding factors 
+                float averageHeight = (
+                    terrainData.GetHeight(x, z) +
+                    terrainData.GetHeight(x + 1, z) +
+                    terrainData.GetHeight(x, z + 1) +
+                    terrainData.GetHeight(x + 1, z + 1)) / 4f;
+
+                Vector3 normal = Vector3.Cross(
+                    vertices[topLeft] - vertices[bottomLeft],
+                    vertices[bottomRight] - vertices[bottomLeft]
+                    ).normalized; 
+
+                float slope = 1f - normal.y; 
+                int tileX = 0; 
+                int tileY = 0;
+
+                // Determine the UVs on the atlas and add them
+                // Rock
+                if (slope > terrainSettings.rockSlope) 
+                { 
+                    tileX = 1; 
+                    tileY = 3; 
+                } 
+                // Sand
+                else if (averageHeight < terrainSettings.sandHeight) 
+                { 
+                    tileX = 3; 
+                    tileY = 0; 
+                } 
+                // Grass 1
+                else if (averageHeight < terrainSettings.grass2Height) 
+                { 
+                    tileX = 0; 
+                    tileY = 1; 
+                } 
+                // Grass 2
+                else 
+                { 
+                    tileX = 0; 
+                    tileY = 2; 
+                }
+
+                AddAtlasUVs(uvs, tileX, tileY, 4);
             }
         }
 
@@ -878,17 +881,38 @@ public class TerrainGen : MonoBehaviour
             return null;
         }
 
-        mesh.vertices =
-            vertices;
-
-        mesh.triangles =
-            triangles.ToArray();
-
+        mesh.vertices = vertices;
+        mesh.triangles = triangles.ToArray();
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
         return mesh;
     }
+
+    /// <summary>
+    /// Takes a quad from the terrain and maps it to the part of the atlas
+    /// </summary>
+    /// <param name="uvs">the list of uvs</param>
+    /// <param name="tileX">desired texture column</param>
+    /// <param name="tileY">desired texture row</param>
+    private void AddAtlasUVs(List<Vector2> uvs, int tileX, int tileY, int atlasSize)
+    {
+        // Finding the coordinate of the texture needed on the atlas instead of using the entire texture
+        float tileWidth = 1.0f / atlasSize;
+        float tileHeight = 1.0f / atlasSize;
+
+        float minX = tileX * tileWidth;
+        float minY = tileY * tileHeight;
+
+        float maxX = minX + tileWidth;
+        float maxY = minY + tileHeight;
+
+        uvs.Add(new Vector2(minX, minY));
+        uvs.Add(new Vector2(minX, maxY));
+        uvs.Add(new Vector2(maxX, minY));
+        uvs.Add(new Vector2(maxX, maxY));
+    }
+
 
     /// <summary>
     /// Creates a separate low-frequency noise field used

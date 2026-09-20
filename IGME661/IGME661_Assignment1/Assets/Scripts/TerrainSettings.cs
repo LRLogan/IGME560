@@ -61,4 +61,8 @@ public class TerrainSettings : MonoBehaviour
 
     [Header("Rendering")]
     public Material terrainMaterial;
+    public float sandHeight = 0.15f;
+    public float grass1Height;
+    public float grass2Height = 0.6f;
+    public float rockSlope = 0.65f;
 }
