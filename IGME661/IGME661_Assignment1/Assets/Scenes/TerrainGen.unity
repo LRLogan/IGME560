@@ -271,21 +271,21 @@ MonoBehaviour:
   octaves: 5
   scale: 0.05
   normalizeBias: 1
-  perlinSeed: 1234
+  perlinSeed: 123
   worldWidth: 500
   worldDepth: 500
   maxHeight: 100
   seaLevel: 0.5
-  islandMaxRadius: 0.681
+  islandMaxRadius: 0.614
   shapeScaleX: 1.2
   shapeScaleZ: 1
   shapeNoiseStrength: 0.235
-  perlinMaskScale: 1.75
+  perlinMaskScale: 3
   perlinShapeSoftness: 0.25
-  perlinShapeThreshold: 0.417
+  perlinShapeThreshold: 0.324
   perlinHeightScale: 1.25
-  heightMaskStrength: 0.083
-  underwaterDepth: 0.1
+  heightMaskStrength: 0.664
+  underwaterDepth: 0
   atlas: {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}
   atlasSize: 2
   grassHeight: 0.42
