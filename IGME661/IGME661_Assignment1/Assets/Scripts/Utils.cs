@@ -7,15 +7,14 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    internal class Utils
+    internal static class UtilsC
     {
-        public Texture2D[] UnpackAtlas(Texture2D atlas, int atlasSize, int texCount, int texSize)
+        public static Texture2D[] UnpackAtlas(Texture2D atlas, int atlasSize, int texCount, int texSize)
         {
             Texture2D[] textures = new Texture2D[texCount];
 
-            // Number of textures that fit across one row/column
+            // Number of textures that fit across one row / column
             int texturesPerRow = atlasSize / texSize;
-
             int x = 0;
             int y = 0;
 

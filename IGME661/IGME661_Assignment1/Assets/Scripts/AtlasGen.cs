@@ -1,3 +1,4 @@
+using Assets.Scripts;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,8 @@ using UnityEngine;
 /// </summary>
 public class AtlasGen : MonoBehaviour
 {
-    public List<Texture> textures;
+    public List<Texture2D> textures;
+    public List<Texture2D> atlassesToUnpack;
     public int imgSize = 64;
     public static int atlasHeight = 0;
     public static int atlasWidth = 0;
@@ -36,6 +38,17 @@ public class AtlasGen : MonoBehaviour
         // Early exits
         if (textures.Count == 0) return -1;
         if (File.Exists(Path.Combine(outputDirName, outputFileName))) return 0;
+
+        // Adding any textures from existing atlasses
+        if(atlassesToUnpack.Count > 0)
+        {
+            foreach(Texture2D atlas in atlassesToUnpack)
+            {
+                /*nums are hard coded here because I know what atlas I am unpacking*/
+                textures.AddRange(UtilsC.UnpackAtlas(atlas, 16, 16, 4));
+                Debug.Log($"Added textures");
+            }
+        }
 
         #region Raw atlas file setup
         // Take the image size into the function
