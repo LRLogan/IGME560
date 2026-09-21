@@ -274,7 +274,7 @@ MonoBehaviour:
   perlinSeed: 123
   worldWidth: 500
   worldDepth: 500
-  maxHeight: 10
+  maxHeight: 50
   seaLevel: 0.5
   islandMaxRadius: 0.614
   shapeScaleX: 1.2

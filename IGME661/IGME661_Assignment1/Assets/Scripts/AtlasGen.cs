@@ -102,7 +102,7 @@ public class AtlasGen : MonoBehaviour
 
         for (int i = 0; i < textures.Count; i++)
         {
-            // Assigning start / end pixels while accounting for anti-aliasing
+            // Assigning start / end pixels
             float pixelStartX = (x1 * pWidth) / aWidth;
             float pixelStartY = (y1 * pHeight) / aHeight;
             float pixelEndX = (x1 + 1) * pWidth / aWidth;
