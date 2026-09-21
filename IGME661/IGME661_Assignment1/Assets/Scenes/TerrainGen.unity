@@ -274,7 +274,7 @@ MonoBehaviour:
   perlinSeed: 123
   worldWidth: 500
   worldDepth: 500
-  maxHeight: 100
+  maxHeight: 10
   seaLevel: 0.5
   islandMaxRadius: 0.614
   shapeScaleX: 1.2
@@ -286,7 +286,11 @@ MonoBehaviour:
   perlinHeightScale: 1.25
   heightMaskStrength: 0.664
   underwaterDepth: 0.5
-  terrainMaterial: {fileID: 2100000, guid: d95c1cfbb9cb84d4a8cd5517d5320085, type: 2}
+  terrainMaterial: {fileID: 2100000, guid: 3d75cfafaab7dd94d8db8847ae831991, type: 2}
+  sandHeight: 0
+  grass1Height: 1
+  grass2Height: 2
+  rockSlope: 0.75
 --- !u!4 &209106795
 Transform:
   m_ObjectHideFlags: 0

@@ -731,7 +731,7 @@ public class TerrainGen : MonoBehaviour
     /// height is above sea level. This is what removes the
     /// rectangular "outside" portion of the terrain.
     /// </summary>
-    private Mesh GenerateTerrainMesh( IslandTerrainData terrainData)
+    private Mesh GenerateTerrainMesh(IslandTerrainData terrainData)
     {
         int width = terrainData.width;
         int depth = terrainData.depth;
@@ -739,37 +739,11 @@ public class TerrainGen : MonoBehaviour
 
         mesh.name = "Procedural Island";
 
-        Vector3[] vertices = new Vector3[width * depth];
+        List<Vector3> vertices = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
 
-        // Create Verts
-        for (int x = 0; x < width; x++)
-        {
-            for (int z = 0; z < depth; z++)
-            {
-                int index = x * depth + z;
-                float normalizedX = x / (float)(width - 1);
-                float normalizedZ = z / (float)(depth - 1);
-                float worldX = (normalizedX - 0.5f) *
-                    terrainData.worldWidth;
-
-                float worldZ = (normalizedZ - 0.5f) *
-                    terrainData.worldDepth;
-
-                float worldY = terrainData.GetHeight(x, z) *
-                    terrainData.maxHeight;
-
-                vertices[index] =
-                    new Vector3(
-                        worldX,
-                        worldY,
-                        worldZ
-                    );
-            }
-        }
-
         // Create Tris
-        List<int> triangles = new List<int>( 
+        List<int> triangles = new List<int>(
             (width - 1) * (depth - 1) * 6);
 
         // Create the mesh
@@ -778,29 +752,10 @@ public class TerrainGen : MonoBehaviour
             for (int z = 0; z < depth - 1; z++)
             {
                 // Finding if the quad is part of the island shape from a mask
-                float mask00 =
-                    terrainData.GetIslandMask(
-                        x,
-                        z
-                    );
-
-                float mask10 =
-                    terrainData.GetIslandMask(
-                        x + 1,
-                        z
-                    );
-
-                float mask01 =
-                    terrainData.GetIslandMask(
-                        x,
-                        z + 1
-                    );
-
-                float mask11 =
-                    terrainData.GetIslandMask(
-                        x + 1,
-                        z + 1
-                    );
+                float mask00 = terrainData.GetIslandMask(x, z);
+                float mask10 = terrainData.GetIslandMask(x + 1, z);
+                float mask01 = terrainData.GetIslandMask(x, z + 1);
+                float mask11 = terrainData.GetIslandMask(x + 1, z + 1);
 
                 // If all four corners are outside the island,
                 // don't create this quad.
@@ -808,22 +763,49 @@ public class TerrainGen : MonoBehaviour
                     mask10 <= 0f &&
                     mask01 <= 0f &&
                     mask11 <= 0f)
-                { continue; }
+                {
+                    continue;
+                }
 
-                int bottomLeft = x * depth + z;
-                int bottomRight = (x + 1) * depth + z;
-                int topLeft = x * depth + (z + 1);
-                int topRight =  (x + 1) * depth + (z + 1);
+                // Create the four vertices for this quad
+                float normalizedX = x / (float)(width - 1);
+                float normalizedZ = z / (float)(depth - 1);
+                float normalizedXNext = (x + 1) / (float)(width - 1);
+                float normalizedZNext = (z + 1) / (float)(depth - 1);
 
-                // Triangle 1
-                triangles.Add(bottomLeft);
-                triangles.Add(topLeft);
-                triangles.Add(bottomRight);
+                float worldX = (normalizedX - 0.5f) * terrainData.worldWidth;
+                float worldZ = (normalizedZ - 0.5f) * terrainData.worldDepth;
+                float worldXNext = (normalizedXNext - 0.5f) * terrainData.worldWidth;
+                float worldZNext = (normalizedZNext - 0.5f) * terrainData.worldDepth;
 
-                // Triangle 2
-                triangles.Add(bottomRight);
-                triangles.Add(topLeft);
-                triangles.Add(topRight);
+                float height00 = terrainData.GetHeight(x, z) * terrainData.maxHeight;
+                float height10 = terrainData.GetHeight(x + 1, z) * terrainData.maxHeight;
+                float height01 = terrainData.GetHeight(x, z + 1) * terrainData.maxHeight;
+                float height11 = terrainData.GetHeight(x + 1, z + 1) * terrainData.maxHeight;
+
+                Vector3 bottomLeft = new Vector3(
+                    worldX,
+                    height00,
+                    worldZ
+                );
+
+                Vector3 bottomRight = new Vector3(
+                    worldXNext,
+                    height10,
+                    worldZ
+                );
+
+                Vector3 topLeft = new Vector3(
+                    worldX,
+                    height01,
+                    worldZNext
+                );
+
+                Vector3 topRight = new Vector3(
+                    worldXNext,
+                    height11,
+                    worldZNext
+                );
 
                 // Determine texture for this quad
                 // Find the deciding factors 
@@ -834,41 +816,66 @@ public class TerrainGen : MonoBehaviour
                     terrainData.GetHeight(x + 1, z + 1)) / 4f;
 
                 Vector3 normal = Vector3.Cross(
-                    vertices[topLeft] - vertices[bottomLeft],
-                    vertices[bottomRight] - vertices[bottomLeft]
-                    ).normalized; 
+                    topLeft - bottomLeft,
+                    bottomRight - bottomLeft
+                ).normalized;
 
-                float slope = 1f - normal.y; 
-                int tileX = 0; 
+                float slope = 1f - normal.y;
+                int tileX = 0;
                 int tileY = 0;
 
                 // Determine the UVs on the atlas and add them
                 // Rock
-                if (slope > terrainSettings.rockSlope) 
-                { 
-                    tileX = 1; 
-                    tileY = 3; 
-                } 
+                if (slope > terrainSettings.rockSlope)
+                {
+                    tileX = 3;
+                    tileY = 3;
+                }
                 // Sand
-                else if (averageHeight < terrainSettings.sandHeight) 
-                { 
-                    tileX = 3; 
-                    tileY = 0; 
-                } 
+                else if (averageHeight < terrainSettings.sandHeight)
+                {
+                    tileX = 3;
+                    tileY = 0;
+                }
                 // Grass 1
-                else if (averageHeight < terrainSettings.grass2Height) 
-                { 
-                    tileX = 0; 
-                    tileY = 1; 
-                } 
+                else if (averageHeight < terrainSettings.grass2Height)
+                {
+                    tileX = 0;
+                    tileY = 1;
+                }
                 // Grass 2
-                else 
-                { 
-                    tileX = 0; 
-                    tileY = 2; 
+                else
+                {
+                    tileX = 0;
+                    tileY = 2;
                 }
 
-                AddAtlasUVs(uvs, tileX, tileY, 4);
+                // Add the four vertices for this quad
+                int vertexIndex =
+                    vertices.Count;
+
+                vertices.Add(bottomLeft);
+                vertices.Add(topLeft);
+                vertices.Add(bottomRight);
+                vertices.Add(topRight);
+
+                // Triangle 1
+                triangles.Add(vertexIndex);
+                triangles.Add(vertexIndex + 1);
+                triangles.Add(vertexIndex + 2);
+
+                // Triangle 2
+                triangles.Add(vertexIndex + 2);
+                triangles.Add(vertexIndex + 1);
+                triangles.Add(vertexIndex + 3);
+
+                // Add UVs for this quad
+                AddAtlasUVs(
+                    uvs,
+                    tileX,
+                    tileY,
+                    4
+                );
             }
         }
 
@@ -881,13 +888,16 @@ public class TerrainGen : MonoBehaviour
             return null;
         }
 
-        mesh.vertices = vertices;
+        mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
+        mesh.SetUVs(0, uvs);
+
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
         return mesh;
     }
+
 
     /// <summary>
     /// Takes a quad from the terrain and maps it to the part of the atlas
