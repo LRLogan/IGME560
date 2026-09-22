@@ -84,9 +84,10 @@ public class AtlasGen : MonoBehaviour
 
         atlasWidth = squareRoot * pixelWidth;
         atlasHeight = squareRootH * pixelHeight;
+        int maxSize = Mathf.Max(atlasWidth, atlasHeight);
 
         // allocate space for the atlas
-        atlas = new Texture2D(atlasWidth, atlasHeight);
+        atlas = new Texture2D(maxSize, maxSize);
         #endregion
 
         #region Adding textures to the Atlas

@@ -834,29 +834,31 @@ public class TerrainGen : MonoBehaviour
                 int tileX = 0;
                 int tileY = 0;
 
+                bool isCoastal = IsCoastalQuad(mask00, mask10, mask01, mask11);
+
                 // Determine the UVs on the atlas and add them
-                // Rock
-                if (slope > terrainSettings.rockSlope)
-                {
-                    tileX = 3;
-                    tileY = 3;
-                }
                 // Sand
-                else if (averageHeight < terrainSettings.sandHeight)
+                if (averageHeight < terrainSettings.sandHeight || isCoastal)
                 {
-                    tileX = 3;
+                    tileX = 4;
+                    tileY = 0;
+                }
+                // Rock
+                else if (slope > terrainSettings.rockSlope)
+                {
+                    tileX = 4;
                     tileY = 0;
                 }
                 // Grass 1
                 else if (averageHeight < terrainSettings.grass2Height)
                 {
                     tileX = 0;
-                    tileY = 1;
+                    tileY = 2;
                 }
                 // Grass 2
                 else
                 {
-                    tileX = 0;
+                    tileX = 2;
                     tileY = 2;
                 }
 
@@ -884,7 +886,7 @@ public class TerrainGen : MonoBehaviour
                     uvs,
                     tileX,
                     tileY,
-                    4
+                    5
                 );
             }
         }
@@ -921,11 +923,11 @@ public class TerrainGen : MonoBehaviour
         float tileWidth = 1.0f / atlasSize;
         float tileHeight = 1.0f / atlasSize;
 
-        float minX = tileX * tileWidth + 0.25f;
-        float minY = tileY * tileHeight + 0.25f;
+        float minX = tileX * tileWidth + 0.20f;
+        float minY = tileY * tileHeight + 0.20f;
 
-        float maxX = minX + tileWidth - 0.25f;
-        float maxY = minY + tileHeight - 0.25f;
+        float maxX = minX + tileWidth - 0.20f;
+        float maxY = minY + tileHeight - 0.20f;
 
         uvs.Add(new Vector2(minX, minY));
         uvs.Add(new Vector2(minX, maxY));
@@ -974,6 +976,27 @@ public class TerrainGen : MonoBehaviour
             heightZ
         );
     }
+
+    /// <summary>
+    /// Determines if a terrain quad is close to the water.
+    /// </summary>
+    private bool IsCoastalQuad( float mask00, float mask10, float mask01, float mask11)
+    {
+        bool hasLand =
+            mask00 > 0f ||
+            mask10 > 0f ||
+            mask01 > 0f ||
+            mask11 > 0f;
+    
+        bool hasWater =
+            mask00 <= 0f ||
+            mask10 <= 0f ||
+            mask01 <= 0f ||
+            mask11 <= 0f;
+    
+        return hasLand && hasWater;
+    }
+
 
     /// <summary>
     /// Removes previously generated island objects.

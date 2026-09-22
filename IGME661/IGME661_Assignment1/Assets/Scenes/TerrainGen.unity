@@ -263,19 +263,20 @@ MonoBehaviour:
   voronoiRandSeed: 1
   regionCount: 25
   seaLevel: 4
+  waterHeightMod: 10
   width: 129
   depth: 129
   frequency: 1
   amplitude: 0.5
   lacunarity: 2
-  gain: 0.3
+  gain: 0.4
   octaves: 5
   scale: 0.05
   normalizeBias: 1
   perlinSeed: 123
   worldWidth: 500
   worldDepth: 500
-  maxHeight: 50
+  maxHeight: 55
   islandMaxRadius: 0.614
   shapeScaleX: 1.2
   shapeScaleZ: 1
@@ -289,7 +290,7 @@ MonoBehaviour:
   terrainMaterial: {fileID: 2100000, guid: 3d75cfafaab7dd94d8db8847ae831991, type: 2}
   waterMaterial: {fileID: 2100000, guid: 4770c96617ae6931abc00b39e8255059, type: 2}
   waterMesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
-  sandHeight: 0
+  sandHeight: 0.38
   grass2Height: 0.51
   rockSlope: 0.65
 --- !u!4 &209106795
@@ -540,7 +541,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 271291ac0f8986f4ea3182d848cd0cb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AtlasGen
-  textures: []
+  textures:
+  - {fileID: 2800000, guid: 8146789a066f4624d84d27cbeaaa49f9, type: 3}
+  - {fileID: 2800000, guid: 1e5ab50f3c3389c4ca84c56caa9a19bb, type: 3}
   atlassesToUnpack:
   - {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}
   imgSize: 4
