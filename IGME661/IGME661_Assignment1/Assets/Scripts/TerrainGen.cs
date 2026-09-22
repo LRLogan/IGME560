@@ -428,7 +428,7 @@ public class TerrainGen : MonoBehaviour
                 // -----------------------------------------
 
                 float underwaterHeight =
-                    Mathf.Max(
+                    Mathf.Min(
                         0f,
                         terrainSettings.seaLevel -
                         terrainSettings.underwaterDepth

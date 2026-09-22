@@ -60,7 +60,6 @@ public class TerrainSettings : MonoBehaviour
     public Material waterMaterial;
     public Mesh waterMesh;
     public float sandHeight = 0.15f;
-    public float grass1Height;
     public float grass2Height = 0.6f;
     public float rockSlope = 0.65f;
 }
