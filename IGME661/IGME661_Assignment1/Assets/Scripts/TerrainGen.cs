@@ -931,14 +931,15 @@ public class TerrainGen : MonoBehaviour
     private void AddAtlasUVs(List<Vector2> uvs, int tileX, int tileY, int atlasSize)
     {
         // Finding the coordinate of the texture needed on the atlas instead of using the entire texture
+        float padding = 0.1f;
         float tileWidth = 1.0f / atlasSize;
         float tileHeight = 1.0f / atlasSize;
 
-        float minX = tileX * tileWidth + 0.199f;
-        float minY = tileY * tileHeight + 0.199f;
+        float minX = tileX * tileWidth + padding;
+        float minY = tileY * tileHeight + padding;
 
-        float maxX = minX + tileWidth - 0.199f;
-        float maxY = minY + tileHeight - 0.199f;
+        float maxX = (tileX + 1) * tileWidth - padding;
+        float maxY = (tileY + 1) * tileHeight - padding;
 
         uvs.Add(new Vector2(minX, minY));
         uvs.Add(new Vector2(minX, maxY));

@@ -543,12 +543,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AtlasGen
   textures:
-  - {fileID: 2800000, guid: 8146789a066f4624d84d27cbeaaa49f9, type: 3}
-  - {fileID: 2800000, guid: 1e5ab50f3c3389c4ca84c56caa9a19bb, type: 3}
-  - {fileID: 2800000, guid: 767333898b315c14ebe873cfc1270778, type: 3}
+  - {fileID: 2800000, guid: 8d7726ff478726544af119e2ab3a94da, type: 3}
+  - {fileID: 2800000, guid: ab90aec0ce4500d4d902f57c6d55b30a, type: 3}
+  - {fileID: 2800000, guid: 681659fe0b9b3714cb55314e4d1161d0, type: 3}
   atlassesToUnpack:
   - {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}
   imgSize: 4
+  atlasHeight: 0
+  atlasWidth: 0
+  atlas: {fileID: 0}
   outputDirName: Assets/Generated
   outputFileName: texAtlas.png
 --- !u!4 &1909485764

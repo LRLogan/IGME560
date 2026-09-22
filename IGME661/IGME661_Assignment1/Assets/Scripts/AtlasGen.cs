@@ -15,9 +15,9 @@ public class AtlasGen : MonoBehaviour
     public List<Texture2D> textures;
     public List<Texture2D> atlassesToUnpack;
     public int imgSize = 16;
-    public static int atlasHeight = 0;
-    public static int atlasWidth = 0;
-    public static Texture2D atlas;
+    public int atlasHeight = 0;
+    public int atlasWidth = 0;
+    public Texture2D atlas;
 
     private int pixelWidth = 64;
     private int pixelHeight = 64;
@@ -84,10 +84,10 @@ public class AtlasGen : MonoBehaviour
 
         atlasWidth = squareRoot * pixelWidth;
         atlasHeight = squareRootH * pixelHeight;
-        int maxSize = Mathf.Max(atlasWidth, atlasHeight);
+        int maxHeight = Mathf.Max(atlasWidth, atlasHeight);
 
         // allocate space for the atlas
-        atlas = new Texture2D(maxSize, maxSize);
+        atlas = new Texture2D(maxHeight, maxHeight);
         #endregion
 
         #region Adding textures to the Atlas
@@ -166,7 +166,8 @@ public class AtlasGen : MonoBehaviour
         // Atlas made
         Debug.Log(
             $"File in dir: {outputPath} \n" +
-            $"Textures count: {textures.Count}"
+            $"Textures count: {textures.Count}" + 
+            $"\n{atlasHeight} by {atlasWidth}"
         );
 
         return 1;
