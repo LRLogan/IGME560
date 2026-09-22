@@ -934,11 +934,11 @@ public class TerrainGen : MonoBehaviour
         float tileWidth = 1.0f / atlasSize;
         float tileHeight = 1.0f / atlasSize;
 
-        float minX = tileX * tileWidth + 0.05f;
-        float minY = tileY * tileHeight + 0.05f;
+        float minX = tileX * tileWidth + 0.199f;
+        float minY = tileY * tileHeight + 0.199f;
 
-        float maxX = minX + tileWidth - 0.05f;
-        float maxY = minY + tileHeight - 0.05f;
+        float maxX = minX + tileWidth - 0.199f;
+        float maxY = minY + tileHeight - 0.199f;
 
         uvs.Add(new Vector2(minX, minY));
         uvs.Add(new Vector2(minX, maxY));
