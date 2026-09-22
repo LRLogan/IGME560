@@ -9,6 +9,8 @@ public class TerrainSettings : MonoBehaviour
     public int voronoiRandSeed = 1234;
     public int regionCount = 25;
     public float seaLevel = 0.05f;
+    [Tooltip("Sea level is where the islands go down to but use this to raise the water above the bottom")]
+    public float waterHeightMod = 10.0f;
 
 
     [Header("Heightmap Resolution")]

@@ -262,7 +262,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainSettings
   voronoiRandSeed: 1
   regionCount: 25
-  seaLevel: 2
+  seaLevel: 4
   width: 129
   depth: 129
   frequency: 1
