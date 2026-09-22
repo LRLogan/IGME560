@@ -545,6 +545,7 @@ MonoBehaviour:
   textures:
   - {fileID: 2800000, guid: 8146789a066f4624d84d27cbeaaa49f9, type: 3}
   - {fileID: 2800000, guid: 1e5ab50f3c3389c4ca84c56caa9a19bb, type: 3}
+  - {fileID: 2800000, guid: 767333898b315c14ebe873cfc1270778, type: 3}
   atlassesToUnpack:
   - {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}
   imgSize: 4

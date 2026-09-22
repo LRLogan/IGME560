@@ -851,25 +851,25 @@ public class TerrainGen : MonoBehaviour
                 // Sand
                 if (averageHeight < terrainSettings.sandHeight || averageDistance <= terrainSettings.sandDistance)
                 {
-                    tileX = 4;
+                    tileX = 2;
                     tileY = 0;
                 }
                 // Rock
                 else if (slope > terrainSettings.rockSlope)
                 {
-                    tileX = 4;
+                    tileX = 1;
                     tileY = 0;
                 }
                 // Grass 1
                 else if (averageHeight < terrainSettings.grass2Height)
                 {
-                    tileX = 0;
+                    tileX = 1;
                     tileY = 2;
                 }
                 // Grass 2
                 else
                 {
-                    tileX = 2;
+                    tileX = 3;
                     tileY = 2;
                 }
 
@@ -934,11 +934,11 @@ public class TerrainGen : MonoBehaviour
         float tileWidth = 1.0f / atlasSize;
         float tileHeight = 1.0f / atlasSize;
 
-        float minX = tileX * tileWidth + 0.20f;
-        float minY = tileY * tileHeight + 0.20f;
+        float minX = tileX * tileWidth + 0.05f;
+        float minY = tileY * tileHeight + 0.05f;
 
-        float maxX = minX + tileWidth - 0.20f;
-        float maxY = minY + tileHeight - 0.20f;
+        float maxX = minX + tileWidth - 0.05f;
+        float maxY = minY + tileHeight - 0.05f;
 
         uvs.Add(new Vector2(minX, minY));
         uvs.Add(new Vector2(minX, maxY));
