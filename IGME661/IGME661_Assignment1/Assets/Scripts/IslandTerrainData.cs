@@ -13,6 +13,7 @@ namespace Assets.Scripts
 
         public readonly float[] heightMap;
         public readonly float[] islandMask;
+        public int[] coastDistance;
 
         public readonly float worldWidth;
         public readonly float worldDepth;
@@ -49,6 +50,7 @@ namespace Assets.Scripts
 
             heightMap = new float[width * depth];
             islandMask = new float[width * depth];
+            coastDistance = new int[width * depth];
         }
 
         public int GetIndex(int x, int z)

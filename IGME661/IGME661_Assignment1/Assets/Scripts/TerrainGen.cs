@@ -237,6 +237,8 @@ public class TerrainGen : MonoBehaviour
         if (terrainData == null)
             return;
 
+        GenerateCoastDistance(terrainData);
+
         Mesh islandMesh =
             GenerateTerrainMesh(terrainData);
 
@@ -834,11 +836,20 @@ public class TerrainGen : MonoBehaviour
                 int tileX = 0;
                 int tileY = 0;
 
-                bool isCoastal = IsCoastalQuad(mask00, mask10, mask01, mask11);
+                // Distance from water
+                int distance00 = terrainData.coastDistance[z * width + x];
+                int distance10 = terrainData.coastDistance[z * width + x + 1];
+                int distance01 = terrainData.coastDistance[(z + 1) * width + x];
+                int distance11 = terrainData.coastDistance[(z + 1) * width + x + 1];
+                int averageDistance =
+                    (distance00 +
+                     distance10 +
+                     distance01 +
+                     distance11) / 4;
 
                 // Determine the UVs on the atlas and add them
                 // Sand
-                if (averageHeight < terrainSettings.sandHeight || isCoastal)
+                if (averageHeight < terrainSettings.sandHeight || averageDistance <= terrainSettings.sandDistance)
                 {
                     tileX = 4;
                     tileY = 0;
@@ -935,6 +946,116 @@ public class TerrainGen : MonoBehaviour
         uvs.Add(new Vector2(maxX, maxY));
     }
 
+    private void GenerateCoastDistance(
+    IslandTerrainData terrainData)
+    {
+        int width = terrainData.width;
+        int depth = terrainData.depth;
+
+        terrainData.coastDistance = new int[width * depth];
+
+        // Start with every cell marked as unvisited
+        for (int i = 0; i < terrainData.coastDistance.Length; i++)
+        {
+            terrainData.coastDistance[i] = -1;
+        }
+
+        Queue<Vector2Int> queue =
+            new Queue<Vector2Int>();
+
+        // Find the coastal cells
+        for (int x = 0; x < width; x++)
+        {
+            for (int z = 0; z < depth; z++)
+            {
+                if (terrainData.GetIslandMask(x, z) <= 0f)
+                {
+                    continue;
+                }
+
+                bool touchesWater =
+                    x == 0 ||
+                    x == width - 1 ||
+                    z == 0 ||
+                    z == depth - 1 ||
+                    terrainData.GetIslandMask(x - 1, z) <= 0f ||
+                    terrainData.GetIslandMask(x + 1, z) <= 0f ||
+                    terrainData.GetIslandMask(x, z - 1) <= 0f ||
+                    terrainData.GetIslandMask(x, z + 1) <= 0f;
+
+                if (touchesWater)
+                {
+                    int index = z * width + x;
+
+                    terrainData.coastDistance[index] = 0;
+                    queue.Enqueue(
+                        new Vector2Int(x, z)
+                    );
+                }
+            }
+        }
+
+        // Expand the distance inward from the coast
+        Vector2Int[] directions =
+        {
+            new Vector2Int(1, 0),
+            new Vector2Int(-1, 0),
+            new Vector2Int(0, 1),
+            new Vector2Int(0, -1)
+        };
+
+        while (queue.Count > 0)
+        {
+            Vector2Int current =
+                queue.Dequeue();
+
+            int currentIndex =
+                current.y * width + current.x;
+
+            int currentDistance =
+                terrainData.coastDistance[currentIndex];
+
+            foreach (Vector2Int direction in directions)
+            {
+                int nextX =
+                    current.x + direction.x;
+
+                int nextZ =
+                    current.y + direction.y;
+
+                if (nextX < 0 ||
+                    nextX >= width ||
+                    nextZ < 0 ||
+                    nextZ >= depth)
+                {
+                    continue;
+                }
+
+                if (terrainData.GetIslandMask(
+                        nextX,
+                        nextZ) <= 0f)
+                {
+                    continue;
+                }
+
+                int nextIndex =
+                    nextZ * width + nextX;
+
+                if (terrainData.coastDistance[nextIndex] != -1)
+                {
+                    continue;
+                }
+
+                terrainData.coastDistance[nextIndex] =
+                    currentDistance + 1;
+
+                queue.Enqueue(
+                    new Vector2Int(nextX, nextZ)
+                );
+            }
+        }
+    }
+
 
     /// <summary>
     /// Creates a separate low-frequency noise field used
@@ -975,26 +1096,6 @@ public class TerrainGen : MonoBehaviour
             heightX,
             heightZ
         );
-    }
-
-    /// <summary>
-    /// Determines if a terrain quad is close to the water.
-    /// </summary>
-    private bool IsCoastalQuad( float mask00, float mask10, float mask01, float mask11)
-    {
-        bool hasLand =
-            mask00 > 0f ||
-            mask10 > 0f ||
-            mask01 > 0f ||
-            mask11 > 0f;
-    
-        bool hasWater =
-            mask00 <= 0f ||
-            mask10 <= 0f ||
-            mask01 <= 0f ||
-            mask11 <= 0f;
-    
-        return hasLand && hasWater;
     }
 
 
