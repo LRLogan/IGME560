@@ -242,8 +242,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGen
   terrainSettings: {fileID: 209106794}
-  islandCount: 5
-  islandSpacing: 300
+  islandCount: 10
+  islandSpacing: 400
   spawnAreaWidth: 1800
   spawnAreaDepth: 1800
   islandParent: {fileID: 442096503}
@@ -262,6 +262,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerrainSettings
   voronoiRandSeed: 1
   regionCount: 25
+  seaLevel: 0.5
   width: 129
   depth: 129
   frequency: 1
@@ -275,7 +276,6 @@ MonoBehaviour:
   worldWidth: 500
   worldDepth: 500
   maxHeight: 50
-  seaLevel: 0.5
   islandMaxRadius: 0.614
   shapeScaleX: 1.2
   shapeScaleZ: 1
@@ -287,9 +287,11 @@ MonoBehaviour:
   heightMaskStrength: 0.664
   underwaterDepth: 0.5
   terrainMaterial: {fileID: 2100000, guid: 3d75cfafaab7dd94d8db8847ae831991, type: 2}
+  waterMaterial: {fileID: 2100000, guid: 4770c96617ae6931abc00b39e8255059, type: 2}
+  waterMesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
   sandHeight: 0
-  grass1Height: 1
-  grass2Height: 2
+  grass1Height: 22
+  grass2Height: 22.5
   rockSlope: 0.75
 --- !u!4 &209106795
 Transform:

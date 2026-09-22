@@ -8,6 +8,7 @@ public class TerrainSettings : MonoBehaviour
     [Header("World / Generation")]
     public int voronoiRandSeed = 1234;
     public int regionCount = 25;
+    public float seaLevel = 0.05f;
 
 
     [Header("Heightmap Resolution")]
@@ -29,11 +30,6 @@ public class TerrainSettings : MonoBehaviour
     public int worldWidth = 500;
     public int worldDepth = 500;
     public float maxHeight = 100f;
-
-
-    [Header("Island Shape")]
-    [Range(0f, 1f)]
-    public float seaLevel = 0.05f;
 
     [Range(0.1f, 1f)]
     public float islandMaxRadius = 0.8f;
@@ -61,6 +57,8 @@ public class TerrainSettings : MonoBehaviour
 
     [Header("Rendering")]
     public Material terrainMaterial;
+    public Material waterMaterial;
+    public Mesh waterMesh;
     public float sandHeight = 0.15f;
     public float grass1Height;
     public float grass2Height = 0.6f;

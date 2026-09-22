@@ -145,6 +145,16 @@ public class TerrainGen : MonoBehaviour
                 islandSeed
             );
         }
+
+        // Spawn water plane
+        GameObject water = new GameObject("water");
+        MeshFilter mFilter = water.AddComponent<MeshFilter>();
+        MeshRenderer mRend = water.AddComponent<MeshRenderer>();
+        mFilter.mesh = terrainSettings.waterMesh;
+        mRend.material = terrainSettings.waterMaterial;
+        water.transform.position = new Vector3(0, terrainSettings.seaLevel, 0);
+        water.transform.localScale = new Vector3(terrainSettings.worldWidth, 1, terrainSettings.worldDepth);
+        Instantiate(water);
     }
 
     /// <summary>
