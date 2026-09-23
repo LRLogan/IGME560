@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace Assets.Scripts
 {
@@ -18,6 +19,8 @@ namespace Assets.Scripts
         public readonly float worldWidth;
         public readonly float worldDepth;
         public readonly float maxHeight;
+
+        public GameObject islandRef;
 
         public IslandTerrainData(
             int width,
@@ -51,6 +54,11 @@ namespace Assets.Scripts
             heightMap = new float[width * depth];
             islandMask = new float[width * depth];
             coastDistance = new int[width * depth];
+        }
+
+        public void SetIslandRef(GameObject islandRef)
+        {
+            this.islandRef = islandRef;
         }
 
         public int GetIndex(int x, int z)

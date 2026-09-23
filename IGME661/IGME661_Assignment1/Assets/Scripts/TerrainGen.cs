@@ -1,6 +1,7 @@
 using Assets.Scripts;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -239,8 +240,7 @@ public class TerrainGen : MonoBehaviour
 
         GenerateCoastDistance(terrainData);
 
-        Mesh islandMesh =
-            GenerateTerrainMesh(terrainData);
+        Mesh islandMesh = GenerateTerrainMesh(terrainData);
 
         if (islandMesh == null ||
             islandMesh.vertexCount == 0 ||
@@ -296,6 +296,10 @@ public class TerrainGen : MonoBehaviour
             meshCollider.sharedMesh =
                 islandMesh;
         }
+
+        terrainData.SetIslandRef(island);
+
+        SpawnIslandPrefabs(terrainData);
 
         generatedIslands.Add(island);
         generatedMeshes.Add(islandMesh);
@@ -831,8 +835,8 @@ public class TerrainGen : MonoBehaviour
                     topLeft - bottomLeft,
                     bottomRight - bottomLeft
                 ).normalized;
-
                 float slope = 1f - normal.y;
+
                 int tileX = 0;
                 int tileY = 0;
 
@@ -854,12 +858,6 @@ public class TerrainGen : MonoBehaviour
                     tileX = 2;
                     tileY = 0;
                 }
-                // Rock
-                else if (slope > terrainSettings.rockSlope)
-                {
-                    tileX = 1;
-                    tileY = 0;
-                }
                 // Grass 1
                 else if (averageHeight < terrainSettings.grass2Height)
                 {
@@ -871,6 +869,13 @@ public class TerrainGen : MonoBehaviour
                 {
                     tileX = 3;
                     tileY = 2;
+                }
+
+                // Rock
+                if (slope > terrainSettings.rockSlope)
+                {
+                    tileX = 1;
+                    tileY = 0;
                 }
 
                 // Add the four vertices for this quad
@@ -917,7 +922,7 @@ public class TerrainGen : MonoBehaviour
 
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
-
+       
         return mesh;
     }
 
@@ -1057,48 +1062,166 @@ public class TerrainGen : MonoBehaviour
         }
     }
 
-
-    /// <summary>
-    /// Creates a separate low-frequency noise field used
-    /// to modify terrain elevation without changing the
-    /// island's overall silhouette.
-    /// </summary>
-    private float CalculateHeightMask(
-        int x,
-        int z,
-        int seed)
+    private void SpawnIslandPrefabs( IslandTerrainData terrainData)
     {
-        float normalizedX =
-            x /
-            (float)(terrainSettings.width - 1);
+        int width = terrainData.width;
+        int depth = terrainData.depth;
+        GameObject prefabParent = Instantiate(new GameObject("prefabParent"), terrainData.islandRef.transform);
 
-        float normalizedZ =
-            z /
-            (float)(terrainSettings.depth - 1);
+        for (int x = 0; x < width - 1; x++)
+        {
+            for (int z = 0; z < depth - 1; z++)
+            {
+                // Make sure this tile is part of the island
+                float mask00 =
+                    terrainData.GetIslandMask(x, z);
 
-        // Offset the height noise differently from
-        // the shape noise so the two patterns remain independent.
-        float seedOffset =
-            seed * 31.739f;
+                float mask10 =
+                    terrainData.GetIslandMask(x + 1, z);
 
-        float heightX =
-            terrainSettings.perlinSeed +
-            seedOffset +
-            normalizedX *
-            terrainSettings.perlinHeightScale;
+                float mask01 =
+                    terrainData.GetIslandMask(x, z + 1);
 
-        float heightZ =
-            terrainSettings.perlinSeed +
-            seedOffset +
-            normalizedZ *
-            terrainSettings.perlinHeightScale;
+                float mask11 =
+                    terrainData.GetIslandMask(x + 1, z + 1);
 
-        return Mathf.PerlinNoise(
-            heightX,
-            heightZ
-        );
+                if (mask00 <= 0f &&
+                    mask10 <= 0f &&
+                    mask01 <= 0f &&
+                    mask11 <= 0f)
+                {
+                    continue;
+                }
+
+                // Calculate the average height
+                float averageHeight = (
+                    terrainData.GetHeight(x, z) +
+                    terrainData.GetHeight(x + 1, z) +
+                    terrainData.GetHeight(x, z + 1) +
+                    terrainData.GetHeight(x + 1, z + 1)
+                ) / 4f;
+
+                // Calculate the slope
+                float height00 =
+                    terrainData.GetHeight(x, z) *
+                    terrainData.maxHeight;
+
+                float height10 =
+                    terrainData.GetHeight(x + 1, z) *
+                    terrainData.maxHeight;
+
+                float height01 =
+                    terrainData.GetHeight(x, z + 1) *
+                    terrainData.maxHeight;
+
+                Vector3 bottomLeft =
+                    new Vector3(x, height00, z);
+
+                Vector3 bottomRight =
+                    new Vector3(x + 1, height10, z);
+
+                Vector3 topLeft =
+                    new Vector3(x, height01, z + 1);
+
+                Vector3 normal = Vector3.Cross(
+                    topLeft - bottomLeft,
+                    bottomRight - bottomLeft
+                ).normalized;
+
+                float slope = 1f - normal.y;
+
+                // Don't spawn anything outside the island
+                if (slope > terrainSettings.rockSlope)
+                {
+                    continue;
+                }
+
+                // Determine if this is a grass tile
+                bool isGrass =
+                    averageHeight >= terrainSettings.sandHeight;
+
+                // Calculate the world position
+                float normalizedX =
+                    (x + 0.5f) / (width - 1);
+
+                float normalizedZ =
+                    (z + 0.5f) / (depth - 1);
+
+                float worldX =
+                    (normalizedX - 0.5f) *
+                    terrainData.worldWidth;
+
+                float worldZ =
+                    (normalizedZ - 0.5f) *
+                    terrainData.worldDepth;
+
+                float worldY =
+                    averageHeight *
+                    terrainData.maxHeight;
+
+                Vector3 spawnPosition =
+                    new Vector3(
+                        worldX,
+                        worldY,
+                        worldZ
+                    );
+
+                // Trees only spawn on grass
+                if (isGrass &&
+                    terrainSettings.treePrefab != null &&
+                    Random.value < terrainSettings.treeSpawnChance)
+                {
+                    Instantiate(
+                        terrainSettings.treePrefab,
+                        spawnPosition,
+                        Quaternion.Euler(
+                            0f,
+                            Random.Range(0f, 360f),
+                            0f
+                        ),
+                        prefabParent.transform
+                    );
+
+                    continue;
+                }
+
+                // Rocks can spawn on any non-cliff terrain
+                if (terrainSettings.rockPrefab != null &&
+                    Random.value < terrainSettings.rockSpawnChance)
+                {
+                    Instantiate(
+                        terrainSettings.rockPrefab,
+                        spawnPosition,
+                        Quaternion.Euler(
+                            0f,
+                            Random.Range(0f, 360f),
+                            0f
+                        ),
+                        prefabParent.transform
+                    );
+
+                    continue;
+                }
+
+                // Grass fills most remaining grass tiles
+                if (isGrass &&
+                    terrainSettings.grassPrefab != null &&
+                    Random.value < terrainSettings.grassSpawnChance)
+                {
+                    Instantiate(
+                        terrainSettings.grassPrefab,
+                        spawnPosition,
+                        Quaternion.Euler(
+                            0f,
+                            Random.Range(0f, 360f),
+                            0f
+                        ),
+                        prefabParent.transform
+                    );
+                }
+            }
+        }
     }
-
 
     /// <summary>
     /// Removes previously generated island objects.

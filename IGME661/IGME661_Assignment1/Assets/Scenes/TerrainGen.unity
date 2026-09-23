@@ -293,7 +293,7 @@ MonoBehaviour:
   sandHeight: 0.38
   sandDistance: 3
   grass2Height: 0.51
-  rockSlope: 0.65
+  rockSlope: 0.55
 --- !u!4 &209106795
 Transform:
   m_ObjectHideFlags: 0
@@ -544,7 +544,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AtlasGen
   textures:
   - {fileID: 2800000, guid: 8d7726ff478726544af119e2ab3a94da, type: 3}
-  - {fileID: 2800000, guid: ab90aec0ce4500d4d902f57c6d55b30a, type: 3}
+  - {fileID: 2800000, guid: fc1dbed7217c0764190d45d6fa6f2c9c, type: 3}
   - {fileID: 2800000, guid: 681659fe0b9b3714cb55314e4d1161d0, type: 3}
   atlassesToUnpack:
   - {fileID: 2800000, guid: 8ba8b94b5ab0c214fa2810a7df98a1a9, type: 3}

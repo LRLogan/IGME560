@@ -57,7 +57,7 @@ public class TerrainSettings : MonoBehaviour
 
     public float underwaterDepth = 0.01f;
 
-    [Header("Rendering")]
+    [Header("Rendering and prefabs")]
     public Material terrainMaterial;
     public Material waterMaterial;
     public Mesh waterMesh;
@@ -65,4 +65,12 @@ public class TerrainSettings : MonoBehaviour
     public int sandDistance = 5;
     public float grass2Height = 0.6f;
     public float rockSlope = 0.65f;
+
+    public GameObject treePrefab;
+    public GameObject rockPrefab;
+    public GameObject grassPrefab;
+    
+    public float treeSpawnChance = 0.03f;
+    public float rockSpawnChance = 0.03f;
+    public float grassSpawnChance = 0.75f;
 }
