@@ -1177,11 +1177,23 @@ public class TerrainGen : MonoBehaviour
 
                 // Trees only spawn on grass
                 if (isGrass &&
-                    terrainSettings.treePrefab != null &&
+                    terrainSettings.treePrefabs.Count > 0 &&
                     Random.value < terrainSettings.treeSpawnChance)
                 {
+                    GameObject treePrefab =
+                            terrainSettings.treePrefabs[
+                                Random.Range(
+                                    0,
+                                    terrainSettings.treePrefabs.Count
+                                )
+                            ];
+
+                    if (treePrefab == null)
+                    {
+                        continue;
+                    }
                     GameObject prefab = Instantiate(
-                        terrainSettings.treePrefab,
+                        treePrefab,
                         prefabParent.transform
                     );
 
@@ -1222,23 +1234,53 @@ public class TerrainGen : MonoBehaviour
 
                 // Grass fills most remaining grass tiles
                 if (isGrass &&
-                    terrainSettings.grassPrefab != null &&
+                    terrainSettings.grassPrefabs != null &&
+                    terrainSettings.grassPrefabs.Count > 0 &&
                     Random.value < terrainSettings.grassSpawnChance)
                 {
-                    GameObject prefab = Instantiate(
-                        terrainSettings.grassPrefab,
-                        prefabParent.transform
-                    );
+                    int grassCount = Random.Range(6, 12);
 
-                    prefab.transform.localPosition =
-                        spawnPosition;
+                    for (int i = 0; i < grassCount; i++)
+                    {
+                        GameObject grassPrefab =
+                            terrainSettings.grassPrefabs[
+                                Random.Range(
+                                    0,
+                                    terrainSettings.grassPrefabs.Count
+                                )
+                            ];
 
-                    prefab.transform.localRotation =
-                        Quaternion.Euler(
-                            0f,
-                            Random.Range(0f, 360f),
-                            0f
+                        if (grassPrefab == null)
+                        {
+                            continue;
+                        }
+
+                        GameObject prefab = Instantiate(
+                            grassPrefab,
+                            prefabParent.transform
                         );
+
+                        float offsetX =
+                            Random.Range(-2f, 2f);
+
+                        float offsetZ =
+                            Random.Range(-2f, 2f);
+
+                        prefab.transform.localPosition =
+                            spawnPosition +
+                            new Vector3(
+                                offsetX,
+                                0f,
+                                offsetZ
+                            );
+
+                        prefab.transform.localRotation =
+                            Quaternion.Euler(
+                                0f,
+                                Random.Range(0f, 360f),
+                                0f
+                            );
+                    }
                 }
             }
         }

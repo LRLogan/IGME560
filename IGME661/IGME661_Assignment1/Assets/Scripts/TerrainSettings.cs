@@ -1,4 +1,6 @@
 using UnityEngine;
+using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// Container for the various terrain generation settings.
@@ -66,11 +68,11 @@ public class TerrainSettings : MonoBehaviour
     public float grass2Height = 0.6f;
     public float rockSlope = 0.65f;
 
-    public GameObject treePrefab;
+    public List<GameObject> treePrefabs;
     public GameObject rockPrefab;
-    public GameObject grassPrefab;
+    public List<GameObject> grassPrefabs;
     
-    public float treeSpawnChance = 0.03f;
+    public float treeSpawnChance = 0.04f;
     public float rockSpawnChance = 0.03f;
     public float grassSpawnChance = 0.75f;
 }
