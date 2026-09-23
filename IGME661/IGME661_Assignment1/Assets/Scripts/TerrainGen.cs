@@ -1062,11 +1062,20 @@ public class TerrainGen : MonoBehaviour
         }
     }
 
-    private void SpawnIslandPrefabs( IslandTerrainData terrainData)
+    private void SpawnIslandPrefabs(IslandTerrainData terrainData)
     {
         int width = terrainData.width;
         int depth = terrainData.depth;
-        GameObject prefabParent = Instantiate(new GameObject("prefabParent"), terrainData.islandRef.transform);
+        GameObject prefabParent = new GameObject("prefabParent");
+
+        prefabParent.transform.SetParent(
+            terrainData.islandRef.transform,
+            false
+        );
+
+        prefabParent.transform.localPosition = Vector3.zero;
+        prefabParent.transform.localRotation = Quaternion.identity;
+        prefabParent.transform.localScale = Vector3.one;
 
         for (int x = 0; x < width - 1; x++)
         {
@@ -1171,16 +1180,20 @@ public class TerrainGen : MonoBehaviour
                     terrainSettings.treePrefab != null &&
                     Random.value < terrainSettings.treeSpawnChance)
                 {
-                    Instantiate(
+                    GameObject prefab = Instantiate(
                         terrainSettings.treePrefab,
-                        spawnPosition,
+                        prefabParent.transform
+                    );
+
+                    prefab.transform.localPosition =
+                        spawnPosition;
+
+                    prefab.transform.localRotation =
                         Quaternion.Euler(
                             0f,
                             Random.Range(0f, 360f),
                             0f
-                        ),
-                        prefabParent.transform
-                    );
+                        );
 
                     continue;
                 }
@@ -1189,16 +1202,20 @@ public class TerrainGen : MonoBehaviour
                 if (terrainSettings.rockPrefab != null &&
                     Random.value < terrainSettings.rockSpawnChance)
                 {
-                    Instantiate(
+                    GameObject prefab = Instantiate(
                         terrainSettings.rockPrefab,
-                        spawnPosition,
+                        prefabParent.transform
+                    );
+
+                    prefab.transform.localPosition =
+                        spawnPosition;
+
+                    prefab.transform.localRotation =
                         Quaternion.Euler(
                             0f,
                             Random.Range(0f, 360f),
                             0f
-                        ),
-                        prefabParent.transform
-                    );
+                        );
 
                     continue;
                 }
@@ -1208,16 +1225,20 @@ public class TerrainGen : MonoBehaviour
                     terrainSettings.grassPrefab != null &&
                     Random.value < terrainSettings.grassSpawnChance)
                 {
-                    Instantiate(
+                    GameObject prefab = Instantiate(
                         terrainSettings.grassPrefab,
-                        spawnPosition,
+                        prefabParent.transform
+                    );
+
+                    prefab.transform.localPosition =
+                        spawnPosition;
+
+                    prefab.transform.localRotation =
                         Quaternion.Euler(
                             0f,
                             Random.Range(0f, 360f),
                             0f
-                        ),
-                        prefabParent.transform
-                    );
+                        );
                 }
             }
         }

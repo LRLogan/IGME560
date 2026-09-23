@@ -294,6 +294,12 @@ MonoBehaviour:
   sandDistance: 3
   grass2Height: 0.51
   rockSlope: 0.55
+  treePrefab: {fileID: 115084, guid: 7c5aafe3fe2c6ef4a9150f7f44653760, type: 3}
+  rockPrefab: {fileID: 119512, guid: 5578b82f17c954843901e8b68ca21dcc, type: 3}
+  grassPrefab: {fileID: 3637134996410867462, guid: 9c6178fe943216540b276b975dafae16, type: 3}
+  treeSpawnChance: 0.03
+  rockSpawnChance: 0.03
+  grassSpawnChance: 0.75
 --- !u!4 &209106795
 Transform:
   m_ObjectHideFlags: 0
