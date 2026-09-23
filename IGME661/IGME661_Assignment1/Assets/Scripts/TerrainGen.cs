@@ -8,8 +8,8 @@ using UnityEngine.UIElements;
 public class TerrainGen : MonoBehaviour
 {
     [Header("Terrain Settings")]
-    [SerializeField]
-    private TerrainSettings terrainSettings;
+    [SerializeField] private TerrainSettings terrainSettings;
+    [SerializeField] private PrefabCliffsGen prefabCliffsGen;
 
     [Header("Island Generation")]
     [SerializeField]
