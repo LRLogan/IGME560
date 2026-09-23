@@ -56,8 +56,7 @@ public class PrefabCliffsGen : MonoBehaviour
     /// Finds terrain edges where land meets water and determines
     /// which of those edges qualify as cliffs.
     /// </summary>
-    private List<CliffEdge> FindCliffEdges(
-        IslandTerrainData terrainData)
+    private List<CliffEdge> FindCliffEdges( IslandTerrainData terrainData)
     {
         List<CliffEdge> cliffEdges =
             new List<CliffEdge>();
@@ -69,26 +68,19 @@ public class PrefabCliffsGen : MonoBehaviour
          * Calculate the size of one terrain grid step in world space.
          *
          * The terrain data is stored as a rectangular grid, so the
-         * horizontal and vertical grid spacing can be calculated from
-         * the total world dimensions.
+         * grid spacing can be calculated from the total world dim
          */
-        float gridSizeX =
-            terrainData.worldWidth /
-            (width - 1);
-
-        float gridSizeZ =
-            terrainData.worldDepth /
-            (depth - 1);
+        float gridSizeX = terrainData.worldWidth / (width - 1);
+        float gridSizeZ = terrainData.worldDepth / (depth - 1);
 
         /*
-         * Check horizontal grid edges.
-         *
-         * These edges connect:
-         *
+         * Check horizontal grid edges
          * (x, z) -> (x + 1, z)
          *
          * If one point is land and the other is water, this is part
-         * of the island boundary.
+         * of the island boundary
+         * 
+         * Essentially just comparing edges to make sure they are different
          */
         for (int x = 0; x < width - 1; x++)
         {
@@ -106,11 +98,8 @@ public class PrefabCliffsGen : MonoBehaviour
                         z
                     );
 
-                bool landA =
-                    maskA > 0f;
-
-                bool landB =
-                    maskB > 0f;
+                bool landA = maskA > 0f;
+                bool landB = maskB > 0f;
 
                 // Ignore edges where both points are the same type.
                 if (landA == landB)
@@ -157,10 +146,7 @@ public class PrefabCliffsGen : MonoBehaviour
         }
 
         /*
-         * Check vertical grid edges.
-         *
-         * These edges connect:
-         *
+         * Check vertical grid edges
          * (x, z) -> (x, z + 1)
          *
          * Again, a boundary exists when one point is land and the
@@ -239,8 +225,7 @@ public class PrefabCliffsGen : MonoBehaviour
     /// Creates a cliff edge if the boundary between the two terrain
     /// points is tall and steep enough to qualify as a cliff.
     /// </summary>
-    private void CreateCliffEdge(
-        List<CliffEdge> cliffEdges,
+    private void CreateCliffEdge(List<CliffEdge> cliffEdges,
         Vector3 pointA,
         Vector3 pointB,
         float heightA,
@@ -256,7 +241,7 @@ public class PrefabCliffsGen : MonoBehaviour
 
         /*
          * Determine which side of the boundary is land and which
-         * side is water.
+         * side is water
          */
         if (pointALand)
         {
@@ -277,31 +262,19 @@ public class PrefabCliffsGen : MonoBehaviour
 
         /*
          * Calculate the vertical distance from the land surface
-         * down to the terrain on the water side.
+         * down to the terrain on the water side
          */
-        float heightDifference =
-            landHeight - waterHeight;
+        float heightDifference = landHeight - waterHeight;
 
         /*
          * If the water-side terrain happens to be higher than the
          * land-side terrain, this cannot be treated as a downward
-         * cliff.
+         * cliff
          */
-        if (heightDifference < cliffHeight)
-        {
-            return;
-        }
+        if (heightDifference < cliffHeight) return;
 
-        /*
-         * Calculate the steepness of the drop.
-         *
-         * This is rise / run rather than the normal-based slope
-         * value used elsewhere in TerrainGen.
-         */
-        float slope =
-            heightDifference /
-            horizontalDistance;
-
+        // Get slope
+        float slope =heightDifference /horizontalDistance;
         if (slope < cliffSlope)
         {
             return;
@@ -309,28 +282,21 @@ public class PrefabCliffsGen : MonoBehaviour
 
         /*
          * The midpoint represents where the cliff prefab will
-         * eventually be positioned.
+         * eventually be positioned
          */
-        Vector3 midpoint =
-            (landPoint + waterPoint) * 0.5f;
+        Vector3 midpoint = (landPoint + waterPoint) * 0.5f;
 
         /*
          * The direction from land toward water gives us the
-         * outward-facing direction of the cliff.
-         *
-         * This is more reliable than trying to derive the
-         * coastline direction from a terrain normal.
+         * outward-facing direction of the cliff
          */
-        Vector3 outward =
-            waterPoint - landPoint;
-
+        Vector3 outward =waterPoint - landPoint;
         outward.y = 0f;
 
         if (outward.sqrMagnitude <= 0.0001f)
         {
             return;
         }
-
         outward.Normalize();
 
         /*
@@ -362,28 +328,14 @@ public class PrefabCliffsGen : MonoBehaviour
     /// <summary>
     /// Converts a terrain grid coordinate into island-local world space.
     /// </summary>
-    private Vector3 GetWorldPosition(
-        IslandTerrainData terrainData,
-        int x,
-        int z)
+    private Vector3 GetWorldPosition(IslandTerrainData terrainData, int x, int z)
     {
-        float normalizedX =
-            x / (float)(terrainData.width - 1);
+        float normalizedX = x / (float)(terrainData.width - 1);
+        float normalizedZ = z / (float)(terrainData.depth - 1);
 
-        float normalizedZ =
-            z / (float)(terrainData.depth - 1);
-
-        float worldX =
-            (normalizedX - 0.5f) *
-            terrainData.worldWidth;
-
-        float worldZ =
-            (normalizedZ - 0.5f) *
-            terrainData.worldDepth;
-
-        float worldY =
-            terrainData.GetHeight(x, z) *
-            terrainData.maxHeight;
+        float worldX = (normalizedX - 0.5f) * terrainData.worldWidth;
+        float worldZ = (normalizedZ - 0.5f) * terrainData.worldDepth;
+        float worldY = terrainData.GetHeight(x, z) * terrainData.maxHeight;
 
         return new Vector3(
             worldX,
@@ -418,6 +370,7 @@ public class PrefabCliffsGen : MonoBehaviour
         // Prefab placement logic will go here.
     }
 
+    #region Helper classes
     /// <summary>
     /// Stores information about a single cliff boundary edge.
     /// </summary>
@@ -442,4 +395,5 @@ public class PrefabCliffsGen : MonoBehaviour
         public List<CliffEdge> edges =
             new List<CliffEdge>();
     }
+    #endregion
 }
