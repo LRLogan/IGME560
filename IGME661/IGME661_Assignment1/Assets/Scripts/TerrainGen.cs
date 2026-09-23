@@ -300,6 +300,7 @@ public class TerrainGen : MonoBehaviour
         terrainData.SetIslandRef(island);
 
         SpawnIslandPrefabs(terrainData);
+        prefabCliffsGen.CreateCliffs(terrainData);
 
         generatedIslands.Add(island);
         generatedMeshes.Add(islandMesh);

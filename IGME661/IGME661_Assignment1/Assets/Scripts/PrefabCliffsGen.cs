@@ -26,37 +26,56 @@ public class PrefabCliffsGen : MonoBehaviour
     {
         if (terrainData == null)
         {
-            Debug.LogWarning("PrefabCliffsGen: Terrain data is null.");
+            Debug.LogWarning(
+                "PrefabCliffsGen: Terrain data is null."
+            );
+
             return;
         }
 
         if (terrainData.islandRef == null)
         {
-            Debug.LogWarning("PrefabCliffsGen: Island reference is null.");
+            Debug.LogWarning(
+                "PrefabCliffsGen: Island reference is null."
+            );
+
             return;
         }
 
         // Find all potential cliff edges around the island
-        List<CliffEdge> cliffEdges = FindCliffEdges(terrainData);
+        List<CliffEdge> cliffEdges =
+            FindCliffEdges(terrainData);
 
         if (cliffEdges.Count == 0)
         {
-            Debug.Log("PrefabCliffsGen: No cliff edges found.");
+            Debug.Log(
+                "PrefabCliffsGen: No cliff edges found."
+            );
+
             return;
         }
 
         // Connect individual edges into continuous cliff sections
-        List<CliffChain> cliffChains = ConnectCliffEdges(cliffEdges);
+        List<CliffChain> cliffChains =
+            ConnectCliffEdges(cliffEdges);
 
-        // Create the cliff prefabs from the connected sections
-        SpawnCliffPieces(terrainData, cliffChains);
+        // Classify the connected edges into prefab pieces
+        List<CliffPiece> cliffPieces =
+            ClassifyCliffPieces(cliffChains);
+
+        // Create the cliff prefabs
+        SpawnCliffPieces(
+            terrainData,
+            cliffPieces
+        );
     }
 
     /// <summary>
     /// Finds terrain edges where land meets water and determines
     /// which of those edges qualify as cliffs.
     /// </summary>
-    private List<CliffEdge> FindCliffEdges( IslandTerrainData terrainData)
+    private List<CliffEdge> FindCliffEdges(
+        IslandTerrainData terrainData)
     {
         List<CliffEdge> cliffEdges =
             new List<CliffEdge>();
@@ -64,23 +83,23 @@ public class PrefabCliffsGen : MonoBehaviour
         int width = terrainData.width;
         int depth = terrainData.depth;
 
-        /*
-         * Calculate the size of one terrain grid step in world space.
-         *
-         * The terrain data is stored as a rectangular grid, so the
-         * grid spacing can be calculated from the total world dim
-         */
-        float gridSizeX = terrainData.worldWidth / (width - 1);
-        float gridSizeZ = terrainData.worldDepth / (depth - 1);
+        float gridSizeX =
+            terrainData.worldWidth /
+            (width - 1);
+
+        float gridSizeZ =
+            terrainData.worldDepth /
+            (depth - 1);
 
         /*
-         * Check horizontal grid edges
+         * Check horizontal terrain grid edges.
+         *
+         * These edges connect:
+         *
          * (x, z) -> (x + 1, z)
          *
-         * If one point is land and the other is water, this is part
-         * of the island boundary
-         * 
-         * Essentially just comparing edges to make sure they are different
+         * A transition between land and water represents a
+         * potential boundary point.
          */
         for (int x = 0; x < width - 1; x++)
         {
@@ -98,10 +117,12 @@ public class PrefabCliffsGen : MonoBehaviour
                         z
                     );
 
-                bool landA = maskA > 0f;
-                bool landB = maskB > 0f;
+                bool landA =
+                    maskA > 0f;
 
-                // Ignore edges where both points are the same type.
+                bool landB =
+                    maskB > 0f;
+
                 if (landA == landB)
                 {
                     continue;
@@ -133,12 +154,26 @@ public class PrefabCliffsGen : MonoBehaviour
                         z
                     ) * terrainData.maxHeight;
 
+                Vector2Int gridA =
+                    new Vector2Int(
+                        x,
+                        z
+                    );
+
+                Vector2Int gridB =
+                    new Vector2Int(
+                        x + 1,
+                        z
+                    );
+
                 CreateCliffEdge(
                     cliffEdges,
                     pointA,
                     pointB,
                     heightA,
                     heightB,
+                    gridA,
+                    gridB,
                     landA,
                     gridSizeX
                 );
@@ -146,11 +181,11 @@ public class PrefabCliffsGen : MonoBehaviour
         }
 
         /*
-         * Check vertical grid edges
-         * (x, z) -> (x, z + 1)
+         * Check vertical terrain grid edges.
          *
-         * Again, a boundary exists when one point is land and the
-         * other point is water.
+         * These edges connect:
+         *
+         * (x, z) -> (x, z + 1)
          */
         for (int x = 0; x < width; x++)
         {
@@ -174,7 +209,6 @@ public class PrefabCliffsGen : MonoBehaviour
                 bool landB =
                     maskB > 0f;
 
-                // Ignore edges where both points are the same type.
                 if (landA == landB)
                 {
                     continue;
@@ -206,12 +240,26 @@ public class PrefabCliffsGen : MonoBehaviour
                         z + 1
                     ) * terrainData.maxHeight;
 
+                Vector2Int gridA =
+                    new Vector2Int(
+                        x,
+                        z
+                    );
+
+                Vector2Int gridB =
+                    new Vector2Int(
+                        x,
+                        z + 1
+                    );
+
                 CreateCliffEdge(
                     cliffEdges,
                     pointA,
                     pointB,
                     heightA,
                     heightB,
+                    gridA,
+                    gridB,
                     landA,
                     gridSizeZ
                 );
@@ -225,11 +273,14 @@ public class PrefabCliffsGen : MonoBehaviour
     /// Creates a cliff edge if the boundary between the two terrain
     /// points is tall and steep enough to qualify as a cliff.
     /// </summary>
-    private void CreateCliffEdge(List<CliffEdge> cliffEdges,
+    private void CreateCliffEdge(
+        List<CliffEdge> cliffEdges,
         Vector3 pointA,
         Vector3 pointB,
         float heightA,
         float heightB,
+        Vector2Int gridA,
+        Vector2Int gridB,
         bool pointALand,
         float horizontalDistance)
     {
@@ -239,10 +290,9 @@ public class PrefabCliffsGen : MonoBehaviour
         float landHeight;
         float waterHeight;
 
-        /*
-         * Determine which side of the boundary is land and which
-         * side is water
-         */
+        Vector2Int landGrid;
+        Vector2Int waterGrid;
+
         if (pointALand)
         {
             landPoint = pointA;
@@ -250,6 +300,9 @@ public class PrefabCliffsGen : MonoBehaviour
 
             landHeight = heightA;
             waterHeight = heightB;
+
+            landGrid = gridA;
+            waterGrid = gridB;
         }
         else
         {
@@ -258,50 +311,60 @@ public class PrefabCliffsGen : MonoBehaviour
 
             landHeight = heightB;
             waterHeight = heightA;
+
+            landGrid = gridB;
+            waterGrid = gridA;
         }
 
         /*
          * Calculate the vertical distance from the land surface
-         * down to the terrain on the water side
+         * down to the terrain on the water side.
          */
-        float heightDifference = landHeight - waterHeight;
+        float heightDifference =
+            landHeight - waterHeight;
+
+        if (heightDifference < cliffHeight)
+        {
+            return;
+        }
 
         /*
-         * If the water-side terrain happens to be higher than the
-         * land-side terrain, this cannot be treated as a downward
-         * cliff
+         * Calculate the steepness of the drop.
          */
-        if (heightDifference < cliffHeight) return;
+        float slope =
+            heightDifference /
+            horizontalDistance;
 
-        // Get slope
-        float slope =heightDifference /horizontalDistance;
         if (slope < cliffSlope)
         {
             return;
         }
 
         /*
-         * The midpoint represents where the cliff prefab will
-         * eventually be positioned
+         * The actual coastline boundary occurs halfway between
+         * the land and water sample points.
          */
-        Vector3 midpoint = (landPoint + waterPoint) * 0.5f;
+        Vector3 boundaryPoint =
+            (landPoint + waterPoint) * 0.5f;
 
         /*
-         * The direction from land toward water gives us the
-         * outward-facing direction of the cliff
+         * Determine the direction from land toward water.
          */
-        Vector3 outward =waterPoint - landPoint;
+        Vector3 outward =
+            waterPoint - landPoint;
+
         outward.y = 0f;
 
         if (outward.sqrMagnitude <= 0.0001f)
         {
             return;
         }
+
         outward.Normalize();
 
         /*
-         * The cliff itself runs perpendicular to the outward
-         * direction.
+         * The cliff runs perpendicular to the direction toward
+         * the water.
          */
         Vector3 tangent =
             new Vector3(
@@ -310,16 +373,41 @@ public class PrefabCliffsGen : MonoBehaviour
                 outward.x
             );
 
+        /*
+         * Create a segment centered around the boundary point.
+         *
+         * The segment length is based on the terrain grid spacing.
+         */
+        float segmentLength =
+            horizontalDistance;
+
+        Vector3 halfSegment =
+            tangent *
+            (segmentLength * 0.5f);
+
+        Vector3 start =
+            boundaryPoint -
+            halfSegment;
+
+        Vector3 end =
+            boundaryPoint +
+            halfSegment;
+
         CliffEdge edge =
             new CliffEdge
             {
-                start = landPoint,
-                end = waterPoint,
-                midpoint = midpoint,
+                start = start,
+                end = end,
+                midpoint = boundaryPoint,
+
                 tangent = tangent,
                 outward = outward,
+
                 height = heightDifference,
-                slope = slope
+                slope = slope,
+
+                landGrid = landGrid,
+                waterGrid = waterGrid
             };
 
         cliffEdges.Add(edge);
@@ -328,14 +416,28 @@ public class PrefabCliffsGen : MonoBehaviour
     /// <summary>
     /// Converts a terrain grid coordinate into island-local world space.
     /// </summary>
-    private Vector3 GetWorldPosition(IslandTerrainData terrainData, int x, int z)
+    private Vector3 GetWorldPosition(
+        IslandTerrainData terrainData,
+        int x,
+        int z)
     {
-        float normalizedX = x / (float)(terrainData.width - 1);
-        float normalizedZ = z / (float)(terrainData.depth - 1);
+        float normalizedX =
+            x / (float)(terrainData.width - 1);
 
-        float worldX = (normalizedX - 0.5f) * terrainData.worldWidth;
-        float worldZ = (normalizedZ - 0.5f) * terrainData.worldDepth;
-        float worldY = terrainData.GetHeight(x, z) * terrainData.maxHeight;
+        float normalizedZ =
+            z / (float)(terrainData.depth - 1);
+
+        float worldX =
+            (normalizedX - 0.5f) *
+            terrainData.worldWidth;
+
+        float worldZ =
+            (normalizedZ - 0.5f) *
+            terrainData.worldDepth;
+
+        float worldY =
+            terrainData.GetHeight(x, z) *
+            terrainData.maxHeight;
 
         return new Vector3(
             worldX,
@@ -354,23 +456,402 @@ public class PrefabCliffsGen : MonoBehaviour
         List<CliffChain> cliffChains =
             new List<CliffChain>();
 
-        // Edge connection logic will go here.
+        if (cliffEdges.Count == 0)
+        {
+            return cliffChains;
+        }
+
+        /*
+         * Each edge has two grid points associated with it.
+         *
+         * We use the land grid coordinate as the connection point.
+         * Edges that share nearby terrain samples are therefore
+         * treated as part of the same cliff boundary.
+         */
+        Dictionary<Vector2Int, List<int>> edgeLookup =
+            new Dictionary<Vector2Int, List<int>>();
+
+        for (int i = 0; i < cliffEdges.Count; i++)
+        {
+            CliffEdge edge =
+                cliffEdges[i];
+
+            if (!edgeLookup.ContainsKey(edge.landGrid))
+            {
+                edgeLookup.Add(
+                    edge.landGrid,
+                    new List<int>()
+                );
+            }
+
+            edgeLookup[edge.landGrid].Add(i);
+        }
+
+        HashSet<int> visited =
+            new HashSet<int>();
+
+        for (int i = 0; i < cliffEdges.Count; i++)
+        {
+            if (visited.Contains(i))
+            {
+                continue;
+            }
+
+            CliffChain chain =
+                new CliffChain();
+
+            Queue<int> edgeQueue =
+                new Queue<int>();
+
+            edgeQueue.Enqueue(i);
+            visited.Add(i);
+
+            while (edgeQueue.Count > 0)
+            {
+                int currentIndex =
+                    edgeQueue.Dequeue();
+
+                CliffEdge currentEdge =
+                    cliffEdges[currentIndex];
+
+                chain.edges.Add(
+                    currentEdge
+                );
+
+                /*
+                 * Find other cliff edges connected to the same
+                 * land-side grid point.
+                 */
+                if (!edgeLookup.TryGetValue(
+                    currentEdge.landGrid,
+                    out List<int> connectedEdges))
+                {
+                    continue;
+                }
+
+                foreach (int connectedIndex in connectedEdges)
+                {
+                    if (visited.Contains(
+                        connectedIndex))
+                    {
+                        continue;
+                    }
+
+                    visited.Add(
+                        connectedIndex
+                    );
+
+                    edgeQueue.Enqueue(
+                        connectedIndex
+                    );
+                }
+            }
+
+            if (chain.edges.Count > 0)
+            {
+                cliffChains.Add(
+                    chain
+                );
+            }
+        }
 
         return cliffChains;
     }
 
     /// <summary>
-    /// Places the appropriate cliff prefabs along each
-    /// connected cliff section.
+    /// Determines which prefab type is required for each portion
+    /// of the connected cliff chains.
+    /// </summary>
+    private List<CliffPiece> ClassifyCliffPieces(
+        List<CliffChain> cliffChains)
+    {
+        List<CliffPiece> cliffPieces =
+            new List<CliffPiece>();
+
+        foreach (CliffChain chain in cliffChains)
+        {
+            if (chain.edges.Count == 0)
+            {
+                continue;
+            }
+
+            /*
+             * A chain containing a single edge is simply a straight
+             * cliff section.
+             */
+            if (chain.edges.Count == 1)
+            {
+                CliffEdge edge =
+                    chain.edges[0];
+
+                cliffPieces.Add(
+                    CreateStraightPiece(
+                        edge
+                    )
+                );
+
+                continue;
+            }
+
+            for (int i = 0;
+                 i < chain.edges.Count;
+                 i++)
+            {
+                CliffEdge current =
+                    chain.edges[i];
+
+                /*
+                 * The first and last edges of an open chain are
+                 * currently treated as straight pieces.
+                 */
+                if (i == 0 ||
+                    i == chain.edges.Count - 1)
+                {
+                    cliffPieces.Add(
+                        CreateStraightPiece(
+                            current
+                        )
+                    );
+
+                    continue;
+                }
+
+                CliffEdge previous =
+                    chain.edges[i - 1];
+
+                CliffEdge next =
+                    chain.edges[i + 1];
+
+                Vector3 previousTangent =
+                    previous.tangent.normalized;
+
+                Vector3 nextTangent =
+                    next.tangent.normalized;
+
+                float turn =
+                    Vector3.Cross(
+                        previousTangent,
+                        nextTangent
+                    ).y;
+
+                /*
+                 * If the tangent does not meaningfully change,
+                 * this is part of a straight section.
+                 */
+                if (Mathf.Abs(turn) < 0.01f)
+                {
+                    cliffPieces.Add(
+                        CreateStraightPiece(
+                            current
+                        )
+                    );
+
+                    continue;
+                }
+
+                /*
+                 * Compare the turn direction against the outward
+                 * direction to determine which side of the island
+                 * the corner occupies.
+                 */
+                Vector3 averageOutward =
+                    (
+                        previous.outward +
+                        current.outward +
+                        next.outward
+                    ).normalized;
+
+                float cornerDirection =
+                    Vector3.Cross(
+                        previousTangent,
+                        nextTangent
+                    ).y;
+
+                float outwardDirection =
+                    Vector3.Dot(
+                        averageOutward,
+                        Vector3.right
+                    );
+
+                CliffPieceType type;
+
+                /*
+                 * The actual inside/outside classification will
+                 * depend on the orientation of the boundary chain.
+                 *
+                 * For now, use the relationship between the tangent
+                 * turn and outward direction to classify the corner.
+                 */
+                if (cornerDirection > 0f)
+                {
+                    type =
+                        CliffPieceType.OutsideCorner;
+                }
+                else
+                {
+                    type =
+                        CliffPieceType.InsideCorner;
+                }
+
+                CliffPiece piece =
+                    new CliffPiece
+                    {
+                        type = type,
+
+                        position =
+                            current.midpoint,
+
+                        tangent =
+                            current.tangent,
+
+                        outward =
+                            current.outward,
+
+                        height =
+                            current.height
+                    };
+
+                cliffPieces.Add(
+                    piece
+                );
+            }
+        }
+
+        return cliffPieces;
+    }
+
+    /// <summary>
+    /// Creates a straight cliff piece description.
+    /// </summary>
+    private CliffPiece CreateStraightPiece(
+        CliffEdge edge)
+    {
+        return new CliffPiece
+        {
+            type =
+                CliffPieceType.Straight,
+
+            position =
+                edge.midpoint,
+
+            tangent =
+                edge.tangent,
+
+            outward =
+                edge.outward,
+
+            height =
+                edge.height
+        };
+    }
+
+    /// <summary>
+    /// Creates the appropriate cliff prefab for each classified
+    /// cliff piece.
     /// </summary>
     private void SpawnCliffPieces(
         IslandTerrainData terrainData,
-        List<CliffChain> cliffChains)
+        List<CliffPiece> cliffPieces)
     {
-        // Prefab placement logic will go here.
+        if (cliffPieces.Count == 0)
+        {
+            return;
+        }
+
+        GameObject cliffParent =
+            new GameObject("cliffPrefabs");
+
+        cliffParent.transform.SetParent(
+            terrainData.islandRef.transform,
+            false
+        );
+
+        cliffParent.transform.localPosition =
+            Vector3.zero;
+
+        cliffParent.transform.localRotation =
+            Quaternion.identity;
+
+        cliffParent.transform.localScale =
+            Vector3.one;
+
+        foreach (CliffPiece piece in cliffPieces)
+        {
+            GameObject prefab =
+                GetPrefabForPiece(
+                    piece.type
+                );
+
+            if (prefab == null)
+            {
+                continue;
+            }
+
+            GameObject instance =
+                Instantiate(
+                    prefab,
+                    cliffParent.transform
+                );
+
+            /*
+             * Move the prefab slightly toward the water.
+             *
+             * This keeps the prefab from sitting directly on top
+             * of the terrain surface and helps prevent z-fighting.
+             */
+            Vector3 position =
+                piece.position +
+                piece.outward *
+                cliffOffset;
+
+            instance.transform.localPosition =
+                position;
+
+            /*
+             * The prefab's forward direction is assumed to represent
+             * the direction along the cliff.
+             */
+            if (piece.tangent.sqrMagnitude >
+                0.0001f)
+            {
+                instance.transform.localRotation =
+                    Quaternion.LookRotation(
+                        piece.tangent,
+                        Vector3.up
+                    );
+            }
+        }
     }
 
-    #region Helper classes
+    /// <summary>
+    /// Gets the prefab associated with a classified cliff piece.
+    /// </summary>
+    private GameObject GetPrefabForPiece(
+        CliffPieceType type)
+    {
+        switch (type)
+        {
+            case CliffPieceType.Straight:
+                return cliffStraightPrefab;
+
+            case CliffPieceType.InsideCorner:
+                return cliffInsideCornerPrefab;
+
+            case CliffPieceType.OutsideCorner:
+                return cliffOutsideCornerPrefab;
+
+            default:
+                return null;
+        }
+    }
+
+    private enum CliffPieceType
+    {
+        Straight,
+        InsideCorner,
+        OutsideCorner
+    }
+
     /// <summary>
     /// Stores information about a single cliff boundary edge.
     /// </summary>
@@ -385,6 +866,9 @@ public class PrefabCliffsGen : MonoBehaviour
 
         public float height;
         public float slope;
+
+        public Vector2Int landGrid;
+        public Vector2Int waterGrid;
     }
 
     /// <summary>
@@ -395,5 +879,18 @@ public class PrefabCliffsGen : MonoBehaviour
         public List<CliffEdge> edges =
             new List<CliffEdge>();
     }
-    #endregion
+
+    /// <summary>
+    /// Stores the information required to spawn one cliff prefab.
+    /// </summary>
+    private class CliffPiece
+    {
+        public CliffPieceType type;
+
+        public Vector3 position;
+        public Vector3 tangent;
+        public Vector3 outward;
+
+        public float height;
+    }
 }
