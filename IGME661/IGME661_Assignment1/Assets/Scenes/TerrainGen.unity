@@ -329,6 +329,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGen
   terrainSettings: {fileID: 209106794}
+  prefabCliffsGen: {fileID: 0}
   islandCount: 10
   islandSpacing: 400
   spawnAreaWidth: 1800
@@ -380,7 +381,7 @@ MonoBehaviour:
   sandHeight: 0.38
   sandDistance: 3
   grass2Height: 0.51
-  rockSlope: 0.55
+  rockSlope: 0.35
   treePrefabs:
   - {fileID: 4241147409563934762, guid: 4b4ea87231b37c148abee861d3c0001e, type: 3}
   - {fileID: 115084, guid: 7c5aafe3fe2c6ef4a9150f7f44653760, type: 3}
