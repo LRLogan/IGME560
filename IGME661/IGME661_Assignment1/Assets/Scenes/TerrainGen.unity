@@ -309,7 +309,6 @@ GameObject:
   - component: {fileID: 209106795}
   - component: {fileID: 209106794}
   - component: {fileID: 209106793}
-  - component: {fileID: 209106796}
   m_Layer: 0
   m_Name: Terraingen
   m_TagString: Untagged
@@ -330,7 +329,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TerrainGen
   terrainSettings: {fileID: 209106794}
-  prefabCliffsGen: {fileID: 209106796}
   islandCount: 10
   islandSpacing: 400
   spawnAreaWidth: 1800
@@ -395,6 +393,10 @@ MonoBehaviour:
   treeSpawnChance: 0.03
   rockSpawnChance: 0.03
   grassSpawnChance: 0.75
+  coastalRockPrefab: {fileID: 3133429536943949068, guid: 25cb56d59f80f614b9da0e9a36c48a05, type: 3}
+  coastalRockCount: 25
+  coastalRockDistance: 20
+  coastalRockRandomOffset: 5
 --- !u!4 &209106795
 Transform:
   m_ObjectHideFlags: 0
@@ -410,24 +412,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &209106796
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 209106792}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f96f500cd91c3e49911d913410573f5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PrefabCliffsGen
-  cliffStraightPrefab: {fileID: 108976, guid: 89628d1fa4c1244408401deb6dcd80c5, type: 3}
-  cliffInsideCornerPrefab: {fileID: 151030, guid: 0e9835138ad5dba4eba43667ec61532b, type: 3}
-  cliffOutsideCornerPrefab: {fileID: 157830, guid: 62e60247eb7840d418f372425884878d, type: 3}
-  cliffSlope: 0.7
-  cliffHeight: 5
-  cliffOffset: 0.05
 --- !u!1 &427036060
 GameObject:
   m_ObjectHideFlags: 0

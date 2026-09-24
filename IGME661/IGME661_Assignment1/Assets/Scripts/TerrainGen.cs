@@ -9,7 +9,6 @@ public class TerrainGen : MonoBehaviour
 {
     [Header("Terrain Settings")]
     [SerializeField] private TerrainSettings terrainSettings;
-    [SerializeField] private PrefabCliffsGen prefabCliffsGen;
 
     [Header("Island Generation")]
     [SerializeField]
@@ -300,7 +299,7 @@ public class TerrainGen : MonoBehaviour
         terrainData.SetIslandRef(island);
 
         SpawnIslandPrefabs(terrainData);
-        prefabCliffsGen.CreateCliffs(terrainData);
+        SpawnCoastalRocks(terrainData);
 
         generatedIslands.Add(island);
         generatedMeshes.Add(islandMesh);
@@ -1285,6 +1284,170 @@ public class TerrainGen : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void SpawnCoastalRocks(IslandTerrainData terrainData)
+    {
+        if (terrainSettings.coastalRockPrefab == null)
+        {
+            return;
+        }
+
+        GameObject rockParent =
+            new GameObject("coastalRocks");
+
+        rockParent.transform.SetParent(
+            terrainData.islandRef.transform,
+            false
+        );
+
+        int spawnedRocks = 0;
+
+        for (int attempt = 0;
+             attempt < terrainSettings.coastalRockCount * 10 &&
+             spawnedRocks < terrainSettings.coastalRockCount;
+             attempt++)
+        {
+            int x =
+                Random.Range(
+                    1,
+                    terrainData.width - 1
+                );
+
+            int z =
+                Random.Range(
+                    1,
+                    terrainData.depth - 1
+                );
+
+            if (terrainData.GetIslandMask(x, z) <= 0f)
+            {
+                continue;
+            }
+
+            /*
+             * Check the four neighboring cells for water.
+             * If one is water, this point is near the coast.
+             */
+            Vector2Int[] directions =
+            {
+            new Vector2Int(1, 0),
+            new Vector2Int(-1, 0),
+            new Vector2Int(0, 1),
+            new Vector2Int(0, -1)
+        };
+
+            Vector2Int waterDirection =
+                Vector2Int.zero;
+
+            bool nearCoast = false;
+
+            foreach (Vector2Int direction in directions)
+            {
+                int checkX = x + direction.x;
+                int checkZ = z + direction.y;
+
+                if (terrainData.GetIslandMask(
+                    checkX,
+                    checkZ) <= 0f)
+                {
+                    waterDirection = direction;
+                    nearCoast = true;
+                    break;
+                }
+            }
+
+            if (!nearCoast)
+            {
+                continue;
+            }
+
+            Vector3 position =
+                GetWorldPosition(
+                    terrainData,
+                    x,
+                    z
+                );
+            position.y = terrainSettings.seaLevel + terrainSettings.waterHeightMod;
+
+            /*
+             * Move the rock toward the water.
+             */
+            Vector3 outward =
+                new Vector3(
+                    waterDirection.x,
+                    0f,
+                    waterDirection.y
+                ).normalized;
+
+            position +=
+                outward *
+                terrainSettings.coastalRockDistance;
+
+            /*
+             * Add some randomness so the rocks aren't perfectly
+             * aligned along the coastline.
+             */
+            position += new Vector3(
+                Random.Range(
+                    -terrainSettings.coastalRockRandomOffset,
+                    terrainSettings.coastalRockRandomOffset
+                ),
+                0f,
+                Random.Range(
+                    -terrainSettings.coastalRockRandomOffset,
+                    terrainSettings.coastalRockRandomOffset
+                )
+            );
+
+            GameObject rock =
+                Instantiate(
+                    terrainSettings.coastalRockPrefab,
+                    rockParent.transform
+                );
+
+            rock.transform.localPosition =
+                position;
+
+            rock.transform.localRotation =
+                Quaternion.Euler(
+                    0f,
+                    Random.Range(0f, 360f),
+                    0f
+                );
+
+            spawnedRocks++;
+        }
+    }
+
+    private Vector3 GetWorldPosition(
+    IslandTerrainData terrainData,
+    int x,
+    int z)
+    {
+        float normalizedX =
+            x / (float)(terrainData.width - 1);
+
+        float normalizedZ =
+            z / (float)(terrainData.depth - 1);
+
+        float worldX =
+            (normalizedX - 0.5f) *
+            terrainData.worldWidth;
+
+        float worldZ =
+            (normalizedZ - 0.5f) *
+            terrainData.worldDepth;
+
+        float worldY =
+            terrainData.GetHeight(x, z) *
+            terrainData.maxHeight;
+
+        return new Vector3(
+            worldX,
+            worldY,
+            worldZ
+        );
     }
 
     /// <summary>

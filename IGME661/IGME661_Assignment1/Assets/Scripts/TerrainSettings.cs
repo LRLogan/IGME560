@@ -75,4 +75,10 @@ public class TerrainSettings : MonoBehaviour
     public float treeSpawnChance = 0.04f;
     public float rockSpawnChance = 0.03f;
     public float grassSpawnChance = 0.75f;
+
+    [Header("Coastal Rocks")]
+    public GameObject coastalRockPrefab;
+    public int coastalRockCount = 8;
+    public float coastalRockDistance = 5f;
+    public float coastalRockRandomOffset = 5f;
 }
