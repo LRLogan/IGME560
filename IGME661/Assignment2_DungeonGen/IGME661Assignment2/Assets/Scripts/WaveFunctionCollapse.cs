@@ -356,25 +356,18 @@ namespace Assets.Scripts
         /// Determines whether two tiles can be adjacent.
         /// </summary>
         private bool TilesCompatible(
-            int currentTile,
-            int neighborTile,
-            Direction direction)
+    int currentTile,
+    int neighborTile,
+    Direction direction)
         {
-            MapTilesData.TileData a =
+            MapTilesData.TileData current =
                 tileData.GetTile(currentTile);
 
-            MapTilesData.TileData b =
-                tileData.GetTile(neighborTile);
+            TileSocket socket =
+                current.GetSocket(direction);
 
-            int socketA =
-                a.GetSocket(direction);
-
-            int socketB =
-                b.GetSocket(
-                    DirectionUtility.Opposite(direction)
-                );
-
-            return socketA == socketB;
+            return socket != null &&
+                   socket.Allows(neighborTile);
         }
 
 

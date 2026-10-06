@@ -170,7 +170,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6273299242532420057}
   m_Layer: 0
-  m_Name: Short wide hallway
+  m_Name: Short wide hallway NS
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

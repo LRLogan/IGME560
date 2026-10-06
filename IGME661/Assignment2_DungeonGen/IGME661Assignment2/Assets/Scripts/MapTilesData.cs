@@ -5,6 +5,18 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
+    [Serializable]
+    public class TileSocket
+    {
+        [Tooltip("Tiles that may exist on the opposite side of this socket.")]
+        public List<int> compatibleTiles = new();
+
+        public bool Allows(int tileIndex)
+        {
+            return compatibleTiles.Contains(tileIndex);
+        }
+    }
+
     [CreateAssetMenu(
         fileName = "MapTilesData",
         menuName = "Dungeon/WFC/Map Tiles Data"
@@ -24,7 +36,7 @@ namespace Assets.Scripts
             [Min(0f)]
             public float weight = 1f;
 
-            [Header("Connection Sockets")]
+            [Header("Connection constraints")]
 
             /*
              * Neighboring sockets must match.
@@ -44,12 +56,12 @@ namespace Assets.Scripts
              * West  = Door
              */
 
-            public int north;
-            public int east;
-            public int south;
-            public int west;
+            public TileSocket north;
+            public TileSocket east;
+            public TileSocket south;
+            public TileSocket west;
 
-            public int GetSocket(Direction direction)
+            public TileSocket GetSocket(Direction direction)
             {
                 return direction switch
                 {
