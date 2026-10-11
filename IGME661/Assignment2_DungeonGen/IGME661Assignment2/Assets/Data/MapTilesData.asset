@@ -24,6 +24,9 @@ MonoBehaviour:
       compatibleTiles: 010000000b00000017000000
     west:
       compatibleTiles: 010000000b00000016000000
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
   - id: 1
     prefab: {fileID: 6032952467565083334, guid: 7bf5c2cf6670d4543b9bad0b73a6a03b, type: 3}
     weight: 1
@@ -35,6 +38,9 @@ MonoBehaviour:
       compatibleTiles: 00000000020000000b00000015000000
     west:
       compatibleTiles: 
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
   - id: 2
     prefab: {fileID: 3918558932665116533, guid: 686709c7d7790a549b197907f60984b0, type: 3}
     weight: 1
@@ -46,6 +52,9 @@ MonoBehaviour:
       compatibleTiles: 00000000020000000b00000015000000
     west:
       compatibleTiles: 00000000020000000a0000000b00000014000000
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
   - id: 10
     prefab: {fileID: 7170177803157320668, guid: 0630ea93ea0b07d4aa8f564b0f3b74db, type: 3}
     weight: 1
@@ -57,6 +66,9 @@ MonoBehaviour:
       compatibleTiles: 0000000001000000020000000b0000001500000017000000
     west:
       compatibleTiles: 00000000020000000b00000014000000
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
   - id: 11
     prefab: {fileID: 3802065377246707474, guid: 746e0526103c58d4d8909e34e3bda5ec, type: 3}
     weight: 1
@@ -68,9 +80,12 @@ MonoBehaviour:
       compatibleTiles: 0000000001000000020000000b0000001500000017000000
     west:
       compatibleTiles: 0000000001000000020000000a00000014000000160000000b000000
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
   - id: 20
     prefab: {fileID: 8584630237639450628, guid: ec297ff40e9261a4eaec40e740c3c918, type: 3}
-    weight: 3
+    weight: 1
     north:
       compatibleTiles: 
     east:
@@ -79,9 +94,12 @@ MonoBehaviour:
       compatibleTiles: 
     west:
       compatibleTiles: 140000000b0000000a0000000200000000000000
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
   - id: 21
     prefab: {fileID: 3117624636990752059, guid: 1d391eea185406b49ba8a99a7d7f88bc, type: 3}
-    weight: 3
+    weight: 1
     north:
       compatibleTiles: 150000000b0000000a0000000200000001000000
     east:
@@ -90,9 +108,12 @@ MonoBehaviour:
       compatibleTiles: 150000000b0000000200000000000000
     west:
       compatibleTiles: 
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
   - id: 22
     prefab: {fileID: 7870981614019915601, guid: b8757beb103537a44ba32722d2156966, type: 3}
-    weight: 3
+    weight: 1
     north:
       compatibleTiles: 
     east:
@@ -101,9 +122,12 @@ MonoBehaviour:
       compatibleTiles: 
     west:
       compatibleTiles: 160000000b00000001000000
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
   - id: 23
     prefab: {fileID: 8621777423395922448, guid: 47cf063e28c9ec94b95ca7a68a15a204, type: 3}
-    weight: 3
+    weight: 1
     north:
       compatibleTiles: 170000000b0000000a00000000000000
     east:
@@ -112,3 +136,6 @@ MonoBehaviour:
       compatibleTiles: 170000000b00000001000000
     west:
       compatibleTiles: 
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}

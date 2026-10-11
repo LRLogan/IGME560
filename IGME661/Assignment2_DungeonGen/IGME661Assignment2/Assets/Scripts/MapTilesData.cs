@@ -61,6 +61,13 @@ namespace Assets.Scripts
             public TileSocket south;
             public TileSocket west;
 
+            [Header("Placement")]
+            public Vector3 prefabOffset;
+            public Vector3 prefabRotation;
+
+            // Optional: grid footprint for multi-cell tiles.
+            public Vector2Int gridSize = Vector2Int.one;
+
             public TileSocket GetSocket(Direction direction)
             {
                 return direction switch

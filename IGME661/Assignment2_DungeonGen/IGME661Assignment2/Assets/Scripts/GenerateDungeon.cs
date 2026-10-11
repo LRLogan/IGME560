@@ -104,15 +104,13 @@ namespace Assets.Scripts
         private void InstantiateDungeon()
         {
             if (dungeonParent == null)
-            {
                 dungeonParent = transform;
-            }
 
-            foreach (GridLocation location
-                     in generatedGrid.GetLocations())
+            Dictionary<GridLocation, GameObject> placedTiles = new();
+
+            foreach (GridLocation location in generatedGrid.GetLocations())
             {
-                WFCGrid.Cell cell =
-                    generatedGrid.GetCell(location);
+                WFCGrid.Cell cell = generatedGrid.GetCell(location);
 
                 int tileIndex = -1;
 
@@ -124,28 +122,105 @@ namespace Assets.Scripts
 
                 if (tileIndex < 0)
                 {
-                    Debug.LogError(
-                        $"Cell {location} has no tile."
-                    );
-
+                    Debug.LogError($"Cell {location} has no tile.");
                     continue;
                 }
 
-                MapTilesData.TileData tile =
+                MapTilesData.TileData tileDataEntry =
                     mapTiles.GetTile(tileIndex);
 
                 Vector3 position =
-                    location.ToWorldPosition(tileSize);
+                    location.ToWorldPosition(tileSize)
+                    + tileDataEntry.prefabOffset;
 
-                Instantiate(
-                    tile.prefab,
+                Quaternion rotation =
+                    Quaternion.Euler(tileDataEntry.prefabRotation);
+
+                GameObject instance = Instantiate(
+                    tileDataEntry.prefab,
                     position,
-                    Quaternion.identity,
+                    rotation,
                     dungeonParent
                 );
+
+                placedTiles.Add(location, instance);
+
+                // Try to align with an already-placed neighbor.
+                // This traversal places southern and western neighbors first.
+                if (!TryAlignToNeighbor(
+                        location, Direction.South, instance, placedTiles))
+                {
+                    TryAlignToNeighbor(
+                        location, Direction.West, instance, placedTiles);
+                }
             }
         }
 
+        private bool TryAlignToNeighbor(
+    GridLocation location,
+    Direction directionToNeighbor,
+    GameObject instance,
+    Dictionary<GridLocation, GameObject> placedTiles)
+        {
+            GridLocation neighborLocation =
+                location.GetAdjacent(directionToNeighbor);
+
+            if (!placedTiles.TryGetValue(
+                    neighborLocation, out GameObject neighbor))
+            {
+                return false;
+            }
+
+            TileConnection targetConnection = GetConnection(
+                neighbor,
+                DirectionUtility.Opposite(directionToNeighbor)
+            );
+
+            TileConnection newConnection = GetConnection(
+                instance,
+                directionToNeighbor
+            );
+
+            if (targetConnection == null || newConnection == null)
+            {
+                Debug.LogWarning(
+                    $"Missing connection point between {location} " +
+                    $"and {neighborLocation}."
+                );
+
+                return false;
+            }
+
+            // Rotate the new tile so its connection faces the target.
+            Quaternion rotationDelta = Quaternion.FromToRotation(
+                newConnection.transform.forward,
+                -targetConnection.transform.forward
+            );
+
+            instance.transform.rotation =
+                rotationDelta * instance.transform.rotation;
+
+            // Move the new tile until the two connection points coincide.
+            instance.transform.position +=
+                targetConnection.transform.position
+                - newConnection.transform.position;
+
+            return true;
+        }
+
+        private TileConnection GetConnection(
+            GameObject instance,
+            Direction direction)
+        {
+            foreach (TileConnection connection
+                     in instance.GetComponentsInChildren<TileConnection>())
+            {
+                if (connection.direction == direction)
+                    return connection;
+            }
+
+            return null;
+        }
 
         private void ClearDungeon()
         {
