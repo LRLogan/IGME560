@@ -42,9 +42,6 @@ namespace Assets.Scripts
         [SerializeField]
         private bool randomizeSeed = true;
 
-        [SerializeField]
-        private bool generateOnStart = true;
-
         [Header("Generated Dungeon")]
 
         [SerializeField]
@@ -53,16 +50,9 @@ namespace Assets.Scripts
 
         private WFCGrid generatedGrid;
 
-
-        private void Start()
-        {
-            if (generateOnStart)
-            {
-                Generate();
-            }
-        }
-
-
+        /// <summary>
+        /// Main entry point
+        /// </summary>
         [ContextMenu("Generate Dungeon")]
         public void Generate()
         {
