@@ -138,5 +138,19 @@ namespace Assets.Scripts
 
             return true;
         }
+
+        public int GetTileIndexById(int id)
+        {
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                if (int.TryParse(tiles[i].id, out int tileId)
+                    && tileId == id)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
     }
 }

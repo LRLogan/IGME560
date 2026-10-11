@@ -363,11 +363,14 @@ namespace Assets.Scripts
             MapTilesData.TileData current =
                 tileData.GetTile(currentTile);
 
-            TileSocket socket =
-                current.GetSocket(direction);
+            TileSocket socket = current.GetSocket(direction);
 
-            return socket != null &&
-                   socket.Allows(neighborTile);
+            if (socket == null)
+                return false;
+
+            int neighborId = int.Parse(tileData.GetTile(neighborTile).id);
+
+            return socket.Allows(neighborId);
         }
 
 
