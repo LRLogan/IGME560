@@ -50,6 +50,11 @@ namespace Assets.Scripts
 
         private WFCGrid generatedGrid;
 
+        private void Start()
+        {
+            Generate();
+        }
+
         /// <summary>
         /// Main entry point
         /// </summary>
