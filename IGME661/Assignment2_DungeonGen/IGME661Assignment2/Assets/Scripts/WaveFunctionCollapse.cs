@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -15,9 +14,7 @@ namespace Assets.Scripts
     {
         private readonly MapTilesData tileData;
         private readonly System.Random random;
-
-        private readonly Queue<GridLocation> propagationQueue = new();
-        private readonly HashSet<GridLocation> queuedLocations = new();
+        private readonly bool enforceClosedBorders;
 
         private WFCGrid grid;
 
@@ -58,9 +55,11 @@ namespace Assets.Scripts
 
         public WaveFunctionCollapse(
             MapTilesData tileData,
-            int seed)
+            int seed,
+            bool enforceClosedBorders = false)
         {
             this.tileData = tileData;
+            this.enforceClosedBorders = enforceClosedBorders;
             random = new System.Random(seed);
         }
 
@@ -108,10 +107,6 @@ namespace Assets.Scripts
                 {
                     if (!Backtrack())
                     {
-                        Debug.LogError(
-                            "WFC failed: no valid configuration exists."
-                        );
-
                         return false;
                     }
                 }
@@ -120,10 +115,6 @@ namespace Assets.Scripts
                 {
                     if (!Backtrack())
                     {
-                        Debug.LogError(
-                            "WFC failed after exhausting all backtracking options."
-                        );
-
                         return false;
                     }
                 }
@@ -150,7 +141,7 @@ namespace Assets.Scripts
                 if (cell.PossibilityCount <= 0)
                 {
                     // Contradiction.
-                    return null;
+                    return location;
                 }
 
                 if (cell.IsCollapsed)
@@ -298,7 +289,18 @@ namespace Assets.Scripts
                         current.GetAdjacent(direction);
 
                     if (!grid.IsInside(neighborLocation))
+                    {
+                        if (enforceClosedBorders &&
+                            !ConstrainBoundary(
+                                current,
+                                direction,
+                                queue))
+                        {
+                            return false;
+                        }
+
                         continue;
+                    }
 
                     WFCGrid.Cell neighbor =
                         grid.GetCell(neighborLocation);
@@ -352,13 +354,47 @@ namespace Assets.Scripts
         }
 
 
+        private bool ConstrainBoundary(
+            GridLocation location,
+            Direction direction,
+            Queue<GridLocation> queue)
+        {
+            WFCGrid.Cell cell = grid.GetCell(location);
+
+            bool changed = false;
+
+            List<int> possibleTiles =
+                new(cell.GetPossibleTiles());
+
+            foreach (int tileIndex in possibleTiles)
+            {
+                MapTilesData.TileData tile =
+                    tileData.GetTile(tileIndex);
+
+                if (!tile.HasOpenSocket(direction))
+                    continue;
+
+                RemoveTile(location, tileIndex);
+                changed = true;
+            }
+
+            if (cell.PossibilityCount == 0)
+                return false;
+
+            if (changed)
+                queue.Enqueue(location);
+
+            return true;
+        }
+
+
         /// <summary>
         /// Determines whether two tiles can be adjacent.
         /// </summary>
         private bool TilesCompatible(
-    int currentTile,
-    int neighborTile,
-    Direction direction)
+            int currentTile,
+            int neighborTile,
+            Direction direction)
         {
             MapTilesData.TileData current =
                 tileData.GetTile(currentTile);
@@ -371,7 +407,18 @@ namespace Assets.Scripts
             TileSocket neighborSocket =
                 neighbor.GetSocket(DirectionUtility.Opposite(direction));
 
-            if (currentSocket == null || neighborSocket == null)
+            bool currentOpen =
+                currentSocket != null &&
+                currentSocket.IsOpen;
+
+            bool neighborOpen =
+                neighborSocket != null &&
+                neighborSocket.IsOpen;
+
+            if (!currentOpen && !neighborOpen)
+                return true;
+
+            if (currentOpen != neighborOpen)
                 return false;
 
             if (!int.TryParse(current.id, out int currentId) ||
@@ -392,15 +439,10 @@ namespace Assets.Scripts
 
             if (!cell.Remove(tileIndex))
                 return;
-            Debug.Log($"Removed {tileData.name}");
+
             changes.Push(
                 new Change(location, tileIndex)
             );
-
-            if (queuedLocations.Add(location))
-            {
-                propagationQueue.Enqueue(location);
-            }
         }
 
 

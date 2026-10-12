@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -8,12 +7,17 @@ namespace Assets.Scripts
     [Serializable]
     public class TileSocket
     {
-        [Tooltip("Tiles that may exist on the opposite side of this socket.")]
+        [Tooltip("Tile IDs that may connect to this side. Leave empty for a closed wall.")]
         public List<int> compatibleTiles = new();
 
-        public bool Allows(int tileIndex)
+        public bool IsOpen =>
+            compatibleTiles != null &&
+            compatibleTiles.Count > 0;
+
+        public bool Allows(int tileId)
         {
-            return compatibleTiles.Contains(tileIndex);
+            return compatibleTiles != null &&
+                   compatibleTiles.Contains(tileId);
         }
     }
 
@@ -79,6 +83,13 @@ namespace Assets.Scripts
                     _ => throw new ArgumentOutOfRangeException(nameof(direction))
                 };
             }
+
+            public bool HasOpenSocket(Direction direction)
+            {
+                TileSocket socket = GetSocket(direction);
+
+                return socket != null && socket.IsOpen;
+            }
         }
 
         [SerializeField]
@@ -107,6 +118,7 @@ namespace Assets.Scripts
             }
 
             HashSet<string> ids = new();
+            HashSet<int> numericIds = new();
 
             for (int i = 0; i < tiles.Count; i++)
             {
@@ -142,10 +154,37 @@ namespace Assets.Scripts
                     return false;
                 }
 
-                if (!int.TryParse(tile.id, out _))
+                if (!int.TryParse(tile.id, out int numericId))
                 {
                     error = $"Tile ID '{tile.id}' must be a numeric string.";
                     return false;
+                }
+
+                numericIds.Add(numericId);
+            }
+
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                TileData tile = tiles[i];
+
+                foreach (Direction direction in Enum.GetValues(typeof(Direction)))
+                {
+                    TileSocket socket = tile.GetSocket(direction);
+
+                    if (socket?.compatibleTiles == null)
+                        continue;
+
+                    foreach (int compatibleId in socket.compatibleTiles)
+                    {
+                        if (!numericIds.Contains(compatibleId))
+                        {
+                            error =
+                                $"Tile '{tile.id}' has an unknown {direction} " +
+                                $"compatible tile ID: {compatibleId}.";
+
+                            return false;
+                        }
+                    }
                 }
             }
 
