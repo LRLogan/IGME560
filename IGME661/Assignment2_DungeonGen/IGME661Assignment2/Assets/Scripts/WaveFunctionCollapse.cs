@@ -366,9 +366,23 @@ namespace Assets.Scripts
             MapTilesData.TileData neighbor =
                 tileData.GetTile(neighborTile);
 
-            TileSocket socket = current.GetSocket(direction);
+            TileSocket currentSocket = current.GetSocket(direction);
 
-            return socket != null && socket.Allows(int.Parse(neighbor.id));
+            TileSocket neighborSocket =
+                neighbor.GetSocket(DirectionUtility.Opposite(direction));
+
+            if (currentSocket == null || neighborSocket == null)
+                return false;
+
+            if (!int.TryParse(current.id, out int currentId) ||
+                !int.TryParse(neighbor.id, out int neighborId))
+            {
+                return false;
+            }
+
+            // Both sides must permit the connection.
+            return currentSocket.Allows(neighborId)
+                && neighborSocket.Allows(currentId);
         }
 
 
@@ -378,7 +392,7 @@ namespace Assets.Scripts
 
             if (!cell.Remove(tileIndex))
                 return;
-
+            Debug.Log($"Removed {tileData.name}");
             changes.Push(
                 new Change(location, tileIndex)
             );

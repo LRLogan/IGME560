@@ -141,6 +141,12 @@ namespace Assets.Scripts
                     error = $"Tile '{tile.id}' has a negative weight.";
                     return false;
                 }
+
+                if (!int.TryParse(tile.id, out _))
+                {
+                    error = $"Tile ID '{tile.id}' must be a numeric string.";
+                    return false;
+                }
             }
 
             return true;

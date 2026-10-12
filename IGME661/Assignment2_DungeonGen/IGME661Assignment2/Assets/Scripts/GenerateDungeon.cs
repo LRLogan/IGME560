@@ -106,7 +106,7 @@ namespace Assets.Scripts
             if (dungeonParent == null)
                 dungeonParent = transform;
 
-            Dictionary<GridLocation, GameObject> placedTiles = new();
+            Dictionary<string, int> tileCounts = new();
 
             foreach (GridLocation location in generatedGrid.GetLocations())
             {
@@ -126,36 +126,33 @@ namespace Assets.Scripts
                     continue;
                 }
 
-                MapTilesData.TileData tileDataEntry =
-                    mapTiles.GetTile(tileIndex);
+                MapTilesData.TileData tile = mapTiles.GetTile(tileIndex);
 
                 Vector3 position =
-                    location.ToWorldPosition(tileSize)
-                    + tileDataEntry.prefabOffset;
+                    location.ToWorldPosition(tileSize) + tile.prefabOffset;
 
-                Quaternion rotation =
-                    Quaternion.Euler(tileDataEntry.prefabRotation);
+                Quaternion rotation = Quaternion.Euler(tile.prefabRotation);
 
-                GameObject instance = Instantiate(
-                    tileDataEntry.prefab,
+                Instantiate(
+                    tile.prefab,
                     position,
                     rotation,
                     dungeonParent
                 );
 
-                placedTiles.Add(location, instance);
+                if (!tileCounts.ContainsKey(tile.id))
+                    tileCounts[tile.id] = 0;
 
-                // Try to align with an already-placed neighbor.
-                // This traversal places southern and western neighbors first.
-                if (!TryAlignToNeighbor(
-                        location, Direction.South, instance, placedTiles))
-                {
-                    TryAlignToNeighbor(
-                        location, Direction.West, instance, placedTiles);
-                }
+                tileCounts[tile.id]++;
+            }
+
+            foreach (var entry in tileCounts)
+            {
+                Debug.Log($"Tile '{entry.Key}': {entry.Value} instances.");
             }
         }
 
+        /*
         private bool TryAlignToNeighbor(
     GridLocation location,
     Direction directionToNeighbor,
@@ -221,7 +218,7 @@ namespace Assets.Scripts
 
             return null;
         }
-
+        */
         private void ClearDungeon()
         {
             if (dungeonParent == null)
