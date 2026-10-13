@@ -14,6 +14,8 @@ namespace Assets.Scripts
     [Serializable]
     public readonly struct GridLocation : IEquatable<GridLocation>
     {
+        #region Coordinates and Movement
+
         public readonly int x;
         public readonly int y;
 
@@ -40,7 +42,7 @@ namespace Assets.Scripts
         }
 
         /// <summary>
-        /// Converts this grid location into a world-space position.
+        /// Maps grid X/Y to Unity X/Z for an initial placement before socket snapping.
         /// </summary>
         public Vector3 ToWorldPosition(float tileSize)
         {
@@ -51,7 +53,9 @@ namespace Assets.Scripts
             );
         }
 
-        #region Helpers and overrides
+        #endregion
+
+        #region Equality and Conversion
         public static Vector2Int ToVector2Int(GridLocation location)
         {
             return new Vector2Int(location.x, location.y);
@@ -91,7 +95,7 @@ namespace Assets.Scripts
 
 
     /// <summary>
-    /// Directions used by the 2D dungeon grid.
+    /// Clockwise grid directions. Rotation variants rely on this North/East/South/West order.
     /// </summary>
     public enum Direction
     {
@@ -108,7 +112,6 @@ namespace Assets.Scripts
     {
         public static Direction Opposite(Direction direction)
         {
-            // Simple map of a direction to a vector 2 (returns the opposite)
             return direction switch
             {
                 Direction.North => Direction.South,
@@ -121,7 +124,6 @@ namespace Assets.Scripts
 
         public static Vector2Int ToOffset(Direction direction)
         {
-            // Simple map of a direction to a vector 2
             return direction switch
             {
                 Direction.North => new Vector2Int(0, 1),

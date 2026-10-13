@@ -7,17 +7,13 @@ namespace Assets.Scripts
     using UnityEngine.Serialization;
 
     /// <summary>
-    /// Unity-facing dungeon generation controller.
-    ///
-    /// Responsible for:
-    ///     - configuring the generation
-    ///     - running WFC
-    ///     - converting the result into GameObjects
-    ///
-    /// It does NOT contain the WFC algorithm itself.
+    /// Runs WFC for a logical layout, then grows a connected dungeon by snapping prefabs.
+    /// Placement may choose compatible alternatives when the solved tile cannot fit physically.
     /// </summary>
     public class GenerateDungeon : MonoBehaviour
     {
+        #region Configuration and Runtime State
+
         [Header("Dungeon Size")]
 
         [SerializeField]
@@ -79,7 +75,13 @@ namespace Assets.Scripts
 
 
         private WFCGrid generatedGrid;
+
+        // Cell indices refer to these oriented variants, not the original asset list.
         private IReadOnlyList<MapTilesData.TileData> generationTiles;
+
+        #endregion
+
+        #region Generation and Connected Traversal
 
         private void Start()
         {
@@ -87,7 +89,7 @@ namespace Assets.Scripts
         }
 
         /// <summary>
-        /// Main entry point
+        /// Clears the previous dungeon and retries with new seeds until enough tiles fit.
         /// </summary>
         [ContextMenu("Generate Dungeon")]
         public void Generate()
@@ -112,12 +114,12 @@ namespace Assets.Scripts
                 return;
             }
 
+            // Consecutive seeds keep retries reproducible when randomization is disabled.
             int firstSeed = randomizeSeed
                 ? Random.Range(int.MinValue, int.MaxValue)
                 : seed;
 
-            int attempts =
-                Mathf.Max(1, maxGenerationAttempts);
+            int attempts = Mathf.Max(1, maxGenerationAttempts);
 
             bool success = false;
             string lastFailure = string.Empty;
@@ -135,6 +137,7 @@ namespace Assets.Scripts
                         enforceClosedBorders
                     );
 
+                // WFC checks socket compatibility; physical footprint checks happen later.
                 bool wfcSucceeded = wfc.Generate(
                     width,
                     height,
@@ -172,13 +175,16 @@ namespace Assets.Scripts
             );
         }
 
-
+        /// <summary>
+        /// Visits open neighbors from one start tile, stopping branches that cannot fit.
+        /// </summary>
+        /// <param name="failureReason"></param>
+        /// <returns></returns>
         private bool InstantiateDungeon(out string failureReason)
         {
             failureReason = string.Empty;
 
-            if (dungeonParent == null)
-                dungeonParent = transform;
+            if (dungeonParent == null) dungeonParent = transform;
 
             Dictionary<string, int> tileCounts = new();
             Dictionary<GridLocation, GameObject> placedTiles = new();
@@ -190,6 +196,7 @@ namespace Assets.Scripts
             int stoppedBranches = 0;
             System.Random placementRandom = new System.Random(seed);
 
+            // Only the start tile may be placed without an existing connection
             GridLocation startLocation = GetStartLocation();
 
             if (!TryPlaceTile(
@@ -214,6 +221,7 @@ namespace Assets.Scripts
                 blockedLocations
             );
 
+            // Grow outward through sockets rather than spawning disconnected grid cells.
             while (placementQueue.Count > 0)
             {
                 GridLocation location = placementQueue.Dequeue();
@@ -236,6 +244,7 @@ namespace Assets.Scripts
                 {
                     if (string.IsNullOrEmpty(failureReason))
                     {
+                        // A blocked branch is expected; other queued branches can still grow.
                         blockedLocations.Add(location);
                         stoppedBranches++;
                         continue;
@@ -283,7 +292,15 @@ namespace Assets.Scripts
             return true;
         }
 
+        #endregion
 
+        #region Tile Selection and Neighbor Constraints
+
+        /// <summary>
+        /// Returns the solved orientation index, or -1 when a cell is not collapsed.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
         private int GetCollapsedTileIndex(GridLocation location)
         {
             WFCGrid.Cell cell = generatedGrid.GetCell(location);
@@ -297,7 +314,10 @@ namespace Assets.Scripts
             return -1;
         }
 
-
+        /// <summary>
+        /// Prefers a tile with many exits, using distance to the grid center to break ties.
+        /// </summary>
+        /// <returns></returns>
         private GridLocation GetStartLocation()
         {
             GridLocation center =
@@ -340,7 +360,11 @@ namespace Assets.Scripts
             return bestLocation;
         }
 
-
+        /// <summary>
+        /// Helper to count open sockets on a tile
+        /// </summary>
+        /// <param name="tile"></param>
+        /// <returns></returns>
         private int CountOpenSockets(MapTilesData.TileData tile)
         {
             int openSockets = 0;
@@ -354,7 +378,18 @@ namespace Assets.Scripts
             return openSockets;
         }
 
-
+        /// <summary>
+        /// Tries compatible orientations and anchor sockets until alignment and footprints pass.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="placedTiles"></param>
+        /// <param name="placedTileIndices"></param>
+        /// <param name="placedFootprints"></param>
+        /// <param name="tileCounts"></param>
+        /// <param name="placementRandom"></param>
+        /// <param name="failureReason"></param>
+        /// <param name="allowDisconnectedPlacement"></param>
+        /// <returns></returns>
         private bool TryPlaceTile(
             GridLocation location,
             Dictionary<GridLocation, GameObject> placedTiles,
@@ -419,7 +454,14 @@ namespace Assets.Scripts
             return false;
         }
 
-
+        /// <summary>
+        /// Tries the WFC choice first, followed by compatible alternatives in weighted order.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="placedTileIndices"></param>
+        /// <param name="placementRandom"></param>
+        /// <param name="allowDisconnectedPlacement"></param>
+        /// <returns></returns>
         private List<int> GetCandidateTileIndices(
             GridLocation location,
             Dictionary<GridLocation, int> placedTileIndices,
@@ -477,7 +519,15 @@ namespace Assets.Scripts
             return ordered;
         }
 
-
+        /// <summary>
+        /// Checks logical socket compatibility against the tiles actually placed so far.
+        /// Physical alignment and footprint overlap are checked separately before acceptance.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="tile"></param>
+        /// <param name="placedTileIndices"></param>
+        /// <param name="allowDisconnectedPlacement"></param>
+        /// <returns></returns>
         private bool FitsPlacedNeighbors(
             GridLocation location,
             MapTilesData.TileData tile,
@@ -523,6 +573,10 @@ namespace Assets.Scripts
         }
 
 
+        #endregion
+
+        #region Prefab Placement and Connections
+
         private GameObject CreateTileInstance(
             GridLocation location,
             MapTilesData.TileData tile)
@@ -534,6 +588,7 @@ namespace Assets.Scripts
                 dungeonParent
             );
 
+            // Keep direction labels in world-grid orientation after rotating the prefab.
             foreach (TileConnection connection in
                      instance.GetComponentsInChildren<TileConnection>(true))
             {
@@ -567,6 +622,7 @@ namespace Assets.Scripts
 
         private Quaternion GetInitialRotation(MapTilesData.TileData tile)
         {
+            // Preserve authored rotations (such as EW hallways), then apply the variant yaw.
             return Quaternion.Euler(0f, tile.quarterTurns * 90f, 0f) *
                    tile.prefab.transform.rotation *
                    Quaternion.Euler(tile.prefabRotation);
@@ -619,6 +675,8 @@ namespace Assets.Scripts
             List<Direction> anchorDirections,
             Dictionary<GridLocation, GameObject> placedTiles)
         {
+            // Snapping one socket may break another when a branch closes a loop.
+            // Require every connection to an existing neighbor to agree before committing.
             foreach (Direction direction in anchorDirections)
             {
                 GridLocation neighborLocation = location.GetAdjacent(direction);
@@ -754,6 +812,14 @@ namespace Assets.Scripts
         }
 
 
+        #endregion
+
+        #region Footprint Collision Checks
+
+        /// <summary>
+        /// Rejects penetration beyond the tolerance using only designated footprint colliders.
+        /// This tests candidate placements immediately, without waiting for trigger callbacks.
+        /// </summary>
         private bool HasBlockingFootprintOverlap(
             GridLocation location,
             GameObject instance,
@@ -768,6 +834,7 @@ namespace Assets.Scripts
             if (instanceFootprints.Count == 0)
                 return false;
 
+            // Candidates have just moved; ensure physics sees their current transforms.
             Physics.SyncTransforms();
 
             foreach (Collider instanceFootprint in instanceFootprints)
@@ -855,6 +922,7 @@ namespace Assets.Scripts
 
             Transform current = collider.transform;
 
+            // A footprint may contain multiple child colliders under its named object.
             while (current != null)
             {
                 if (string.Equals(
@@ -892,6 +960,10 @@ namespace Assets.Scripts
         }
 
 
+        #endregion
+
+        #region Connection Lookup and Cleanup
+
         private TileConnection GetConnection(
             GameObject instance,
             Direction direction)
@@ -914,6 +986,7 @@ namespace Assets.Scripts
 
             if (Application.isPlaying)
             {
+                // Destroy is deferred in Play mode; disable and detach failed candidates now.
                 instance.SetActive(false);
 
                 if (instance.transform.parent == dungeonParent)
@@ -942,5 +1015,7 @@ namespace Assets.Scripts
                 );
             }
         }
+
+        #endregion
     }
 }

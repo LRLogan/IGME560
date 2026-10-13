@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
+    /// <summary>
+    /// Allowed neighbor IDs for one side. An empty list represents a closed wall.
+    /// </summary>
     [Serializable]
     public class TileSocket
     {
@@ -21,12 +24,17 @@ namespace Assets.Scripts
         }
     }
 
+    /// <summary>
+    /// Authored prefab catalogue, socket rules, weights, and optional rotation settings.
+    /// </summary>
     [CreateAssetMenu(
         fileName = "MapTilesData",
         menuName = "Dungeon/WFC/Map Tiles Data"
     )]
     public class MapTilesData : ScriptableObject
     {
+        #region Tile Definitions and Catalogue Access
+
         [Serializable]
         public class TileData
         {
@@ -43,28 +51,13 @@ namespace Assets.Scripts
             [Tooltip("Allow 0, 90, 180, and 270 degree rotations when matching sockets.")]
             public bool allowRotation;
 
+            // Runtime orientation only; the source asset remains in its authored orientation.
             [NonSerialized]
             public int quarterTurns;
 
             [Header("Connection constraints")]
 
-            /*
-             * Neighboring sockets must match.
-             *
-             * For example:
-             *
-             * Hallway NS:
-             * North = Door
-             * South = Door
-             * East  = Wall
-             * West  = Wall
-             *
-             * Small Room:
-             * North = Door
-             * South = Door
-             * East  = Door
-             * West  = Door
-             */
+            // Open neighbors must allow each other's IDs on opposite sides.
 
             public TileSocket north;
             public TileSocket east;
@@ -75,7 +68,7 @@ namespace Assets.Scripts
             public Vector3 prefabOffset;
             public Vector3 prefabRotation;
 
-            // Optional: grid footprint for multi-cell tiles.
+            // Size metadata only; physical occupancy currently uses Footprint colliders.
             public Vector2Int gridSize = Vector2Int.one;
 
             public TileSocket GetSocket(Direction direction)
@@ -110,6 +103,14 @@ namespace Assets.Scripts
             return tiles[index];
         }
 
+        #endregion
+
+        #region Runtime Orientation Variants
+
+        /// <summary>
+        /// Builds solver options for each permitted rotation without modifying the asset.
+        /// Variants share prefab IDs but have distinct indices in the returned list.
+        /// </summary>
         public IReadOnlyList<TileData> CreateVariants()
         {
             List<TileData> variants = new();
@@ -120,7 +121,8 @@ namespace Assets.Scripts
 
                 for (int turns = 0; turns < orientationCount; turns++)
                 {
-                    // Directions are ordered clockwise: North, East, South, West.
+                    // Inverse lookup maps each rotated side back to its authored socket.
+                    // Split weight between orientations to preserve the prefab's total weight.
                     variants.Add(new TileData
                     {
                         id = tile.id,
@@ -144,8 +146,12 @@ namespace Assets.Scripts
             return variants;
         }
 
+        #endregion
+
+        #region Validation and ID Lookup
+
         /// <summary>
-        /// Validates the almanac before WFC begins.
+        /// Checks source IDs, prefabs, weights, and socket references before solving.
         /// </summary>
         public bool Validate(out string error)
         {
@@ -244,5 +250,7 @@ namespace Assets.Scripts
 
             return -1;
         }
+
+        #endregion
     }
 }

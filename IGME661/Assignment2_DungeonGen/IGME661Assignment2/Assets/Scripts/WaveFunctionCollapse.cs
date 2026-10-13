@@ -12,16 +12,20 @@ namespace Assets.Scripts
     /// </summary>
     public class WaveFunctionCollapse
     {
+        #region Solver State and Decision History
+
         private readonly MapTilesData tileData;
         private readonly System.Random random;
         private readonly bool enforceClosedBorders;
 
         private WFCGrid grid;
 
+        // Every index stored in the wave refers to this list, including rotated options.
         public IReadOnlyList<MapTilesData.TileData> Variants { get; private set; }
 
         private struct Change
         {
+            // One removed possibility, recorded so a failed decision can be undone.
             public GridLocation location;
             public int tileIndex;
 
@@ -36,6 +40,7 @@ namespace Assets.Scripts
 
         private class Decision
         {
+            // Number of changes that existed immediately before this decision.
             public int marker;
             public GridLocation location;
 
@@ -66,8 +71,13 @@ namespace Assets.Scripts
         }
 
 
+        #endregion
+
+        #region Generation and Weighted Collapse
+
         /// <summary>
-        /// Generates a WFC solution.
+        /// Collapses cells and propagates constraints, backtracking on contradictions.
+        /// The resulting grid describes logical adjacency, not physical prefab positions.
         /// </summary>
         public bool Generate(
             int width,
@@ -169,6 +179,9 @@ namespace Assets.Scripts
         }
 
 
+        /// <summary>
+        /// Weighted Shannon entropy: cells with fewer likely choices are resolved first.
+        /// </summary>
         private float CalculateEntropy(WFCGrid.Cell cell)
         {
             float totalWeight = 0f;
@@ -237,6 +250,10 @@ namespace Assets.Scripts
         }
 
 
+        #endregion
+
+        #region Socket Constraint Propagation
+
         /// <summary>
         /// Propagates all currently known constraints through the grid.
         /// </summary>
@@ -254,7 +271,7 @@ namespace Assets.Scripts
 
 
         /// <summary>
-        /// Propagates changes made since the previous propagation.
+        /// Revisits cells in the removal history and propagates their current possibilities.
         /// </summary>
         private bool Propagate()
         {
@@ -316,6 +333,7 @@ namespace Assets.Scripts
                     List<int> neighborTiles =
                         new(neighbor.GetPossibleTiles());
 
+                    // A neighbor option survives if at least one current option supports it.
                     foreach (int neighborTile in neighborTiles)
                     {
                         bool hasSupport = false;
@@ -439,6 +457,10 @@ namespace Assets.Scripts
         }
 
 
+        #endregion
+
+        #region Backtracking and Reversible Changes
+
         private void RemoveTile(GridLocation location, int tileIndex)
         {
             WFCGrid.Cell cell = grid.GetCell(location);
@@ -510,8 +532,6 @@ namespace Assets.Scripts
             {
                 Change change = changes.Pop();
 
-                // Removing a tile from the wave is reversible.
-                // Since this is private state, we need a restore method.
                 RestoreTile(
                     change.location,
                     change.tileIndex
@@ -524,15 +544,14 @@ namespace Assets.Scripts
             GridLocation location,
             int tileIndex)
         {
-            // WFCGrid.Cell intentionally exposes Remove(),
-            // but restoration is handled here through reflection-free
-            // internal state access.
-            //
-            // This implementation requires the Cell to expose Restore().
             grid.GetCell(location).Restore(tileIndex);
         }
 
+        #endregion
 
+        #region Random Selection Helpers
+
+        // Used for both initial choices and backtracking alternatives.
         private int WeightedRandomChoice(
             List<int> candidates)
         {
@@ -586,5 +605,7 @@ namespace Assets.Scripts
                     (list[j], list[i]);
             }
         }
+
+        #endregion
     }
 }

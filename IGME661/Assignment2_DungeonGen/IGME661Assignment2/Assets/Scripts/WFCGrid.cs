@@ -8,14 +8,16 @@ namespace Assets.Scripts
     using System.Collections.Generic;
 
     /// <summary>
-    /// Runtime representation of the WFC wave
-    ///
-    /// Each cell contains a set of possible tile indices
-    /// This represents the current wave
-    /// Every cell starts with every tile as a possibility
+    /// Logical grid of possible orientation indices into WaveFunctionCollapse.Variants.
+    /// Cells begin with all options; one remaining option is collapsed, zero is a contradiction.
     /// </summary>
     public class WFCGrid
     {
+        #region Cell Possibilities
+
+        /// <summary>
+        /// Tracks enabled options and supports removal/restoration during solver backtracking.
+        /// </summary>
         public class Cell
         {
             private readonly bool[] possible;
@@ -89,6 +91,7 @@ namespace Assets.Scripts
                 return true;
             }
 
+            // Direct collapse bypasses the solver's undo history; WFC records removals instead.
             public void KeepOnly(int tileIndex)
             {
                 for (int i = 0; i < possible.Length; i++)
@@ -104,6 +107,10 @@ namespace Assets.Scripts
                 return new Cell(possible);
             }
         }
+
+        #endregion
+
+        #region Grid Construction and Access
 
         private readonly Cell[,] cells;
 
@@ -159,5 +166,7 @@ namespace Assets.Scripts
                 }
             }
         }
+
+        #endregion
     }
 }
