@@ -279,8 +279,16 @@ MonoBehaviour:
   height: 5
   tileSize: 20
   mapTiles: {fileID: 11400000, guid: 4fa5a6bd4ca9c1c40b35a2142057dd83, type: 2}
+  alignOpenConnections: 1
+  rotateTilesToMatchConnectionPoints: 0
+  connectionAlignmentWarningDistance: 0.25
+  preventFootprintOverlaps: 1
+  footprintOverlapTolerance: 1
+  footprintObjectName: Footprint
   seed: 12345
   randomizeSeed: 0
+  maxGenerationAttempts: 25
+  enforceClosedBorders: 0
   dungeonParent: {fileID: 1919221929}
 --- !u!4 &1435970776
 Transform:
