@@ -40,6 +40,12 @@ namespace Assets.Scripts
             [Min(0f)]
             public float weight = 1f;
 
+            [Tooltip("Allow 0, 90, 180, and 270 degree rotations when matching sockets.")]
+            public bool allowRotation;
+
+            [NonSerialized]
+            public int quarterTurns;
+
             [Header("Connection constraints")]
 
             /*
@@ -102,6 +108,40 @@ namespace Assets.Scripts
         public TileData GetTile(int index)
         {
             return tiles[index];
+        }
+
+        public IReadOnlyList<TileData> CreateVariants()
+        {
+            List<TileData> variants = new();
+
+            foreach (TileData tile in tiles)
+            {
+                int orientationCount = tile.allowRotation ? 4 : 1;
+
+                for (int turns = 0; turns < orientationCount; turns++)
+                {
+                    // Directions are ordered clockwise: North, East, South, West.
+                    variants.Add(new TileData
+                    {
+                        id = tile.id,
+                        prefab = tile.prefab,
+                        weight = tile.weight / orientationCount,
+                        allowRotation = tile.allowRotation,
+                        quarterTurns = turns,
+                        north = tile.GetSocket((Direction)((4 - turns) % 4)),
+                        east = tile.GetSocket((Direction)((5 - turns) % 4)),
+                        south = tile.GetSocket((Direction)((6 - turns) % 4)),
+                        west = tile.GetSocket((Direction)((7 - turns) % 4)),
+                        prefabOffset = tile.prefabOffset,
+                        prefabRotation = tile.prefabRotation,
+                        gridSize = turns % 2 == 0
+                            ? tile.gridSize
+                            : new Vector2Int(tile.gridSize.y, tile.gridSize.x)
+                    });
+                }
+            }
+
+            return variants;
         }
 
         /// <summary>

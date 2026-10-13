@@ -18,6 +18,8 @@ namespace Assets.Scripts
 
         private WFCGrid grid;
 
+        public IReadOnlyList<MapTilesData.TileData> Variants { get; private set; }
+
         private struct Change
         {
             public GridLocation location;
@@ -80,10 +82,14 @@ namespace Assets.Scripts
                 return false;
             }
 
+            Variants = tileData.CreateVariants();
+            changes.Clear();
+            decisions.Clear();
+
             grid = new WFCGrid(
                 width,
                 height,
-                tileData.Count
+                Variants.Count
             );
 
             // Propagate initial constraints.
@@ -170,7 +176,7 @@ namespace Assets.Scripts
 
             foreach (int tileIndex in cell.GetPossibleTiles())
             {
-                float weight = tileData.GetTile(tileIndex).weight;
+                float weight = Variants[tileIndex].weight;
 
                 if (weight <= 0f)
                     continue;
@@ -369,7 +375,7 @@ namespace Assets.Scripts
             foreach (int tileIndex in possibleTiles)
             {
                 MapTilesData.TileData tile =
-                    tileData.GetTile(tileIndex);
+                    Variants[tileIndex];
 
                 if (!tile.HasOpenSocket(direction))
                     continue;
@@ -397,10 +403,10 @@ namespace Assets.Scripts
             Direction direction)
         {
             MapTilesData.TileData current =
-                tileData.GetTile(currentTile);
+                Variants[currentTile];
 
             MapTilesData.TileData neighbor =
-                tileData.GetTile(neighborTile);
+                Variants[neighborTile];
 
             TileSocket currentSocket = current.GetSocket(direction);
 
@@ -540,7 +546,7 @@ namespace Assets.Scripts
                 totalWeight +=
                     Mathf.Max(
                         0f,
-                        tileData.GetTile(index).weight
+                        Variants[index].weight
                     );
             }
 
@@ -559,7 +565,7 @@ namespace Assets.Scripts
                 value -=
                     Mathf.Max(
                         0f,
-                        tileData.GetTile(index).weight
+                        Variants[index].weight
                     );
 
                 if (value <= 0)

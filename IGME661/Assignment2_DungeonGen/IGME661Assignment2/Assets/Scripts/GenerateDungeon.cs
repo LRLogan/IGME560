@@ -38,9 +38,6 @@ namespace Assets.Scripts
         private bool alignOpenConnections = true;
 
         [SerializeField]
-        private bool rotateTilesToMatchConnectionPoints = false;
-
-        [SerializeField]
         [Min(0f)]
         [FormerlySerializedAs("connectionAlignmentWarningDistance")]
         private float maximumConnectionGap = 0.25f;
@@ -82,6 +79,7 @@ namespace Assets.Scripts
 
 
         private WFCGrid generatedGrid;
+        private IReadOnlyList<MapTilesData.TileData> generationTiles;
 
         private void Start()
         {
@@ -149,6 +147,7 @@ namespace Assets.Scripts
                     continue;
                 }
 
+                generationTiles = wfc.Variants;
                 success = InstantiateDungeon(out lastFailure);
 
                 if (success)
@@ -317,7 +316,7 @@ namespace Assets.Scripts
                     continue;
 
                 int openSockets = CountOpenSockets(
-                    mapTiles.GetTile(tileIndex)
+                    generationTiles[tileIndex]
                 );
 
                 float distanceToCenter =
@@ -372,7 +371,7 @@ namespace Assets.Scripts
                          location, placedTileIndices, placementRandom,
                          allowDisconnectedPlacement))
             {
-                MapTilesData.TileData tile = mapTiles.GetTile(tileIndex);
+                MapTilesData.TileData tile = generationTiles[tileIndex];
                 GameObject instance = CreateTileInstance(location, tile);
                 List<Direction> anchorDirections =
                     GetPlacedOpenNeighborDirections(
@@ -429,10 +428,10 @@ namespace Assets.Scripts
         {
             List<int> candidates = new();
 
-            for (int index = 0; index < mapTiles.Count; index++)
+            for (int index = 0; index < generationTiles.Count; index++)
             {
                 if (FitsPlacedNeighbors(
-                        location, mapTiles.GetTile(index), placedTileIndices,
+                        location, generationTiles[index], placedTileIndices,
                         allowDisconnectedPlacement))
                 {
                     candidates.Add(index);
@@ -450,7 +449,7 @@ namespace Assets.Scripts
                 float totalWeight = 0f;
 
                 foreach (int index in candidates)
-                    totalWeight += Mathf.Max(0f, mapTiles.GetTile(index).weight);
+                    totalWeight += Mathf.Max(0f, generationTiles[index].weight);
 
                 int selected = placementRandom.Next(candidates.Count);
 
@@ -461,7 +460,7 @@ namespace Assets.Scripts
                     for (int i = 0; i < candidates.Count; i++)
                     {
                         roll -= Mathf.Max(0f,
-                            mapTiles.GetTile(candidates[i]).weight);
+                            generationTiles[candidates[i]].weight);
 
                         if (roll <= 0d)
                         {
@@ -498,7 +497,7 @@ namespace Assets.Scripts
                     continue;
                 }
 
-                MapTilesData.TileData neighbor = mapTiles.GetTile(neighborIndex);
+                MapTilesData.TileData neighbor = generationTiles[neighborIndex];
                 TileSocket socket = tile.GetSocket(direction);
                 TileSocket other = neighbor.GetSocket(
                     DirectionUtility.Opposite(direction));
@@ -528,12 +527,21 @@ namespace Assets.Scripts
             GridLocation location,
             MapTilesData.TileData tile)
         {
-            return Instantiate(
+            GameObject instance = Instantiate(
                 tile.prefab,
                 GetInitialPosition(location, tile),
                 GetInitialRotation(tile),
                 dungeonParent
             );
+
+            foreach (TileConnection connection in
+                     instance.GetComponentsInChildren<TileConnection>(true))
+            {
+                connection.direction = (Direction)(
+                    ((int)connection.direction + tile.quarterTurns) % 4);
+            }
+
+            return instance;
         }
 
 
@@ -559,7 +567,8 @@ namespace Assets.Scripts
 
         private Quaternion GetInitialRotation(MapTilesData.TileData tile)
         {
-            return tile.prefab.transform.rotation *
+            return Quaternion.Euler(0f, tile.quarterTurns * 90f, 0f) *
+                   tile.prefab.transform.rotation *
                    Quaternion.Euler(tile.prefabRotation);
         }
 
@@ -647,7 +656,7 @@ namespace Assets.Scripts
                 if (!placedTileIndices.TryGetValue(
                         neighborLocation, out int neighborIndex) ||
                     !tile.HasOpenSocket(direction) ||
-                    !mapTiles.GetTile(neighborIndex).HasOpenSocket(
+                    !generationTiles[neighborIndex].HasOpenSocket(
                         DirectionUtility.Opposite(direction)))
                 {
                     continue;
@@ -668,8 +677,8 @@ namespace Assets.Scripts
             Dictionary<GridLocation, int> placedTileIndices,
             HashSet<GridLocation> blockedLocations)
         {
-            MapTilesData.TileData tile = mapTiles.GetTile(
-                placedTileIndices[location]);
+            MapTilesData.TileData tile = generationTiles[
+                placedTileIndices[location]];
 
             foreach (Direction direction in GetPlacementDirections())
             {
@@ -734,17 +743,6 @@ namespace Assets.Scripts
                 );
 
                 return false;
-            }
-
-            if (rotateTilesToMatchConnectionPoints)
-            {
-                Quaternion rotationDelta = Quaternion.FromToRotation(
-                    newConnection.transform.forward,
-                    -targetConnection.transform.forward
-                );
-
-                instance.transform.rotation =
-                    rotationDelta * instance.transform.rotation;
             }
 
             // Move the new tile until the two connection points coincide.

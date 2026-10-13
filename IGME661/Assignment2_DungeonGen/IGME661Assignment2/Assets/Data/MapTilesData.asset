@@ -15,27 +15,29 @@ MonoBehaviour:
   tiles:
   - id: 0
     prefab: {fileID: 2532498851498194671, guid: a4aff7203323b714da38df73a2b5c8b9, type: 3}
-    weight: 1
+    weight: 2
+    allowRotation: 0
     north:
-      compatibleTiles: 01000000020000000a0000000b00000015000000
+      compatibleTiles: 01000000020000000a0000000b000000150000000c000000
     east:
-      compatibleTiles: 01000000020000000a0000000b00000014000000
+      compatibleTiles: 01000000020000000a0000000b000000140000000c000000
     south:
-      compatibleTiles: 010000000b00000017000000
+      compatibleTiles: 010000000b000000170000000c000000
     west:
-      compatibleTiles: 010000000b00000016000000
+      compatibleTiles: 010000000b000000160000000c000000
     prefabOffset: {x: 0, y: 0, z: 0}
     prefabRotation: {x: 0, y: 0, z: 0}
     gridSize: {x: 1, y: 1}
   - id: 1
     prefab: {fileID: 6032952467565083334, guid: 7bf5c2cf6670d4543b9bad0b73a6a03b, type: 3}
-    weight: 1
+    weight: 2
+    allowRotation: 0
     north:
-      compatibleTiles: 000000000a0000000b00000017000000
+      compatibleTiles: 000000000a0000000b000000170000000c000000
     east:
-      compatibleTiles: 000000000b00000016000000
+      compatibleTiles: 000000000b000000160000000c000000
     south:
-      compatibleTiles: 00000000020000000b00000015000000
+      compatibleTiles: 00000000020000000b000000150000000c000000
     west:
       compatibleTiles: 
     prefabOffset: {x: 0, y: 0, z: 0}
@@ -43,69 +45,74 @@ MonoBehaviour:
     gridSize: {x: 1, y: 1}
   - id: 2
     prefab: {fileID: 3918558932665116533, guid: 686709c7d7790a549b197907f60984b0, type: 3}
-    weight: 1
+    weight: 2
+    allowRotation: 0
     north:
-      compatibleTiles: 01000000020000000a0000000b00000015000000
+      compatibleTiles: 01000000020000000a0000000b000000150000000c000000
     east:
-      compatibleTiles: 01000000020000000a0000000b00000014000000
+      compatibleTiles: 01000000020000000a0000000b000000140000000c000000
     south:
-      compatibleTiles: 00000000020000000b00000015000000
+      compatibleTiles: 00000000020000000b000000150000000c000000
     west:
-      compatibleTiles: 00000000020000000a0000000b00000014000000
+      compatibleTiles: 00000000020000000a0000000b000000140000000c000000
     prefabOffset: {x: 0, y: 0, z: 0}
     prefabRotation: {x: 0, y: 0, z: 0}
     gridSize: {x: 1, y: 1}
   - id: 10
     prefab: {fileID: 7170177803157320668, guid: 0630ea93ea0b07d4aa8f564b0f3b74db, type: 3}
-    weight: 1
+    weight: 2
+    allowRotation: 0
     north:
       compatibleTiles: 
     east:
-      compatibleTiles: 01000000020000000b00000014000000
+      compatibleTiles: 01000000020000000b000000140000000c000000
     south:
-      compatibleTiles: 0000000001000000020000000b0000001500000017000000
+      compatibleTiles: 0000000001000000020000000b00000015000000170000000c000000
     west:
-      compatibleTiles: 00000000020000000b00000014000000
+      compatibleTiles: 00000000020000000b000000140000000c000000
     prefabOffset: {x: 0, y: 0, z: 0}
     prefabRotation: {x: 0, y: 0, z: 0}
     gridSize: {x: 1, y: 1}
   - id: 11
     prefab: {fileID: 3802065377246707474, guid: 746e0526103c58d4d8909e34e3bda5ec, type: 3}
     weight: 1
+    allowRotation: 0
     north:
-      compatibleTiles: 0b000000170000000a00000015000000020000000100000000000000
+      compatibleTiles: 0b000000170000000a000000150000000200000001000000000000000c000000
     east:
-      compatibleTiles: 0000000001000000020000000a0000000b0000001400000016000000
+      compatibleTiles: 0000000001000000020000000a0000000b00000014000000160000000c000000
     south:
-      compatibleTiles: 0000000001000000020000000b0000001500000017000000
+      compatibleTiles: 0000000001000000020000000b00000015000000170000000c000000
     west:
-      compatibleTiles: 0000000001000000020000000a00000014000000160000000b000000
+      compatibleTiles: 0000000001000000020000000a00000014000000160000000b0000000c000000
     prefabOffset: {x: 0, y: 0, z: 0}
     prefabRotation: {x: 0, y: 0, z: 0}
     gridSize: {x: 1, y: 1}
   - id: 20
     prefab: {fileID: 8584630237639450628, guid: ec297ff40e9261a4eaec40e740c3c918, type: 3}
     weight: 2
+    allowRotation: 0
     north:
       compatibleTiles: 
     east:
-      compatibleTiles: 140000000b0000000a0000000200000001000000
+      compatibleTiles: 140000000b0000000a00000002000000010000000c000000
     south:
       compatibleTiles: 
     west:
-      compatibleTiles: 140000000b0000000a0000000200000000000000
+      compatibleTiles: 140000000b0000000a00000002000000000000000c000000
     prefabOffset: {x: 0, y: 0, z: 0}
     prefabRotation: {x: 0, y: 0, z: 0}
     gridSize: {x: 1, y: 1}
   - id: 21
     prefab: {fileID: 3117624636990752059, guid: 1d391eea185406b49ba8a99a7d7f88bc, type: 3}
     weight: 2
+    allowRotation: 0
     north:
-      compatibleTiles: 150000000b0000000a0000000200000001000000
+      compatibleTiles: 150000000b0000000a00000002000000010000000c000000
     east:
       compatibleTiles: 
     south:
-      compatibleTiles: 150000000b0000000200000000000000
+      compatibleTiles: 150000000b00000002000000000000000c000000
     west:
       compatibleTiles: 
     prefabOffset: {x: 0, y: 0, z: 0}
@@ -114,6 +121,7 @@ MonoBehaviour:
   - id: 22
     prefab: {fileID: 7870981614019915601, guid: b8757beb103537a44ba32722d2156966, type: 3}
     weight: 2
+    allowRotation: 0
     north:
       compatibleTiles: 
     east:
@@ -128,12 +136,28 @@ MonoBehaviour:
   - id: 23
     prefab: {fileID: 8621777423395922448, guid: 47cf063e28c9ec94b95ca7a68a15a204, type: 3}
     weight: 2
+    allowRotation: 0
     north:
       compatibleTiles: 170000000b0000000a00000000000000
     east:
       compatibleTiles: 
     south:
       compatibleTiles: 170000000b00000001000000
+    west:
+      compatibleTiles: 
+    prefabOffset: {x: 0, y: 0, z: 0}
+    prefabRotation: {x: 0, y: 0, z: 0}
+    gridSize: {x: 1, y: 1}
+  - id: 12
+    prefab: {fileID: 5964086657594504595, guid: 0668dad32ec545248b5f32533cac89bf, type: 3}
+    weight: 3
+    allowRotation: 1
+    north:
+      compatibleTiles: 0000000001000000020000000a0000000b0000001400000015000000
+    east:
+      compatibleTiles: 
+    south:
+      compatibleTiles: 
     west:
       compatibleTiles: 
     prefabOffset: {x: 0, y: 0, z: 0}
