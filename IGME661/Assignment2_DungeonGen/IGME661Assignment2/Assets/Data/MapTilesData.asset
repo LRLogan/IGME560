@@ -85,7 +85,7 @@ MonoBehaviour:
     gridSize: {x: 1, y: 1}
   - id: 20
     prefab: {fileID: 8584630237639450628, guid: ec297ff40e9261a4eaec40e740c3c918, type: 3}
-    weight: 1
+    weight: 2
     north:
       compatibleTiles: 
     east:
@@ -99,7 +99,7 @@ MonoBehaviour:
     gridSize: {x: 1, y: 1}
   - id: 21
     prefab: {fileID: 3117624636990752059, guid: 1d391eea185406b49ba8a99a7d7f88bc, type: 3}
-    weight: 1
+    weight: 2
     north:
       compatibleTiles: 150000000b0000000a0000000200000001000000
     east:
@@ -113,7 +113,7 @@ MonoBehaviour:
     gridSize: {x: 1, y: 1}
   - id: 22
     prefab: {fileID: 7870981614019915601, guid: b8757beb103537a44ba32722d2156966, type: 3}
-    weight: 1
+    weight: 2
     north:
       compatibleTiles: 
     east:
@@ -127,7 +127,7 @@ MonoBehaviour:
     gridSize: {x: 1, y: 1}
   - id: 23
     prefab: {fileID: 8621777423395922448, guid: 47cf063e28c9ec94b95ca7a68a15a204, type: 3}
-    weight: 1
+    weight: 2
     north:
       compatibleTiles: 170000000b0000000a00000000000000
     east:

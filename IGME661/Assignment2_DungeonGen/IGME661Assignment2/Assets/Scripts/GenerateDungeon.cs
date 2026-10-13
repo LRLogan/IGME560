@@ -4,6 +4,7 @@ using System.Collections.Generic;
 namespace Assets.Scripts
 {
     using UnityEngine;
+    using UnityEngine.Serialization;
 
     /// <summary>
     /// Unity-facing dungeon generation controller.
@@ -40,7 +41,9 @@ namespace Assets.Scripts
         private bool rotateTilesToMatchConnectionPoints = false;
 
         [SerializeField]
-        private float connectionAlignmentWarningDistance = 0.25f;
+        [Min(0f)]
+        [FormerlySerializedAs("connectionAlignmentWarningDistance")]
+        private float maximumConnectionGap = 0.25f;
 
         [Header("Footprint Collision")]
 
@@ -64,6 +67,10 @@ namespace Assets.Scripts
 
         [SerializeField]
         private int maxGenerationAttempts = 25;
+
+        [SerializeField]
+        [Min(1)]
+        private int minimumConnectedTiles = 8;
 
         [SerializeField]
         private bool enforceClosedBorders = false;
@@ -176,19 +183,23 @@ namespace Assets.Scripts
 
             Dictionary<string, int> tileCounts = new();
             Dictionary<GridLocation, GameObject> placedTiles = new();
+            Dictionary<GridLocation, int> placedTileIndices = new();
             List<Collider> placedFootprints = new();
             HashSet<GridLocation> blockedLocations = new();
             HashSet<GridLocation> queuedLocations = new();
             Queue<GridLocation> placementQueue = new();
-            int skippedOverlaps = 0;
+            int stoppedBranches = 0;
+            System.Random placementRandom = new System.Random(seed);
 
             GridLocation startLocation = GetStartLocation();
 
             if (!TryPlaceTile(
                     startLocation,
                     placedTiles,
+                    placedTileIndices,
                     placedFootprints,
                     tileCounts,
+                    placementRandom,
                     out failureReason,
                     allowDisconnectedPlacement: true))
             {
@@ -200,6 +211,7 @@ namespace Assets.Scripts
                 placementQueue,
                 queuedLocations,
                 placedTiles,
+                placedTileIndices,
                 blockedLocations
             );
 
@@ -216,15 +228,17 @@ namespace Assets.Scripts
                 if (!TryPlaceTile(
                         location,
                         placedTiles,
+                        placedTileIndices,
                         placedFootprints,
                         tileCounts,
+                        placementRandom,
                         out failureReason,
                         allowDisconnectedPlacement: false))
                 {
                     if (string.IsNullOrEmpty(failureReason))
                     {
                         blockedLocations.Add(location);
-                        skippedOverlaps++;
+                        stoppedBranches++;
                         continue;
                     }
 
@@ -236,20 +250,34 @@ namespace Assets.Scripts
                     placementQueue,
                     queuedLocations,
                     placedTiles,
+                    placedTileIndices,
                     blockedLocations
                 );
             }
+
+            int requiredTiles = Mathf.Min(
+                width * height, Mathf.Max(1, minimumConnectedTiles));
+
+            if (placedTiles.Count < requiredTiles)
+            {
+                failureReason =
+                    $"Only {placedTiles.Count} connected tile(s) fit; " +
+                    $"at least {requiredTiles} are required.";
+                return false;
+            }
+
+            Debug.Log($"Placed {placedTiles.Count} connected tiles.");
 
             foreach (var entry in tileCounts)
             {
                 Debug.Log($"Tile '{entry.Key}': {entry.Value} instances.");
             }
 
-            if (skippedOverlaps > 0)
+            if (stoppedBranches > 0)
             {
                 Debug.Log(
-                    $"Stopped {skippedOverlaps} branch(es) because their " +
-                    "footprints would overlap existing dungeon geometry."
+                    $"Stopped {stoppedBranches} branch(es) because no " +
+                    "compatible tile could connect without a footprint overlap."
                 );
             }
 
@@ -276,114 +304,223 @@ namespace Assets.Scripts
             GridLocation center =
                 new GridLocation(width / 2, height / 2);
 
-            if (generatedGrid.IsInside(center) &&
-                GetCollapsedTileIndex(center) >= 0)
-            {
-                return center;
-            }
+            GridLocation bestLocation = new GridLocation(0, 0);
+            int bestOpenSockets = -1;
+            float bestDistanceToCenter = float.MaxValue;
+            bool foundStart = false;
 
             foreach (GridLocation location in generatedGrid.GetLocations())
             {
-                if (GetCollapsedTileIndex(location) >= 0)
-                    return location;
+                int tileIndex = GetCollapsedTileIndex(location);
+
+                if (tileIndex < 0)
+                    continue;
+
+                int openSockets = CountOpenSockets(
+                    mapTiles.GetTile(tileIndex)
+                );
+
+                float distanceToCenter =
+                    Vector2Int.Distance(
+                        GridLocation.ToVector2Int(location),
+                        GridLocation.ToVector2Int(center)
+                    );
+
+                if (!foundStart ||
+                    openSockets > bestOpenSockets ||
+                    (openSockets == bestOpenSockets &&
+                     distanceToCenter < bestDistanceToCenter))
+                {
+                    bestLocation = location;
+                    bestOpenSockets = openSockets;
+                    bestDistanceToCenter = distanceToCenter;
+                    foundStart = true;
+                }
             }
 
-            return new GridLocation(0, 0);
+            return bestLocation;
+        }
+
+
+        private int CountOpenSockets(MapTilesData.TileData tile)
+        {
+            int openSockets = 0;
+
+            foreach (Direction direction in GetPlacementDirections())
+            {
+                if (tile.HasOpenSocket(direction))
+                    openSockets++;
+            }
+
+            return openSockets;
         }
 
 
         private bool TryPlaceTile(
             GridLocation location,
             Dictionary<GridLocation, GameObject> placedTiles,
+            Dictionary<GridLocation, int> placedTileIndices,
             List<Collider> placedFootprints,
             Dictionary<string, int> tileCounts,
+            System.Random placementRandom,
             out string failureReason,
             bool allowDisconnectedPlacement)
         {
             failureReason = string.Empty;
 
-            int tileIndex = GetCollapsedTileIndex(location);
-
-            if (tileIndex < 0)
+            foreach (int tileIndex in GetCandidateTileIndices(
+                         location, placedTileIndices, placementRandom,
+                         allowDisconnectedPlacement))
             {
-                failureReason = $"Cell {location} has no tile.";
-                return false;
-            }
+                MapTilesData.TileData tile = mapTiles.GetTile(tileIndex);
+                GameObject instance = CreateTileInstance(location, tile);
+                List<Direction> anchorDirections =
+                    GetPlacedOpenNeighborDirections(
+                        location, tile, placedTileIndices);
 
-            MapTilesData.TileData tile = mapTiles.GetTile(tileIndex);
-            GameObject instance = CreateTileInstance(location, tile);
-
-            List<Direction> anchorDirections =
-                GetPlacedOpenNeighborDirections(location, placedTiles);
-
-            if (!allowDisconnectedPlacement &&
-                anchorDirections.Count == 0)
-            {
-                DestroyGeneratedObject(instance);
-                return false;
-            }
-
-            if (allowDisconnectedPlacement)
-            {
-                if (TryAcceptTilePlacement(
-                        location,
-                        instance,
-                        tile,
-                        placedTiles,
-                        placedFootprints,
-                        tileCounts))
+                if (allowDisconnectedPlacement)
                 {
-                    return true;
+                    if (TryAcceptTilePlacement(
+                            location, instance, tile, tileIndex,
+                            anchorDirections, placedTiles, placedTileIndices,
+                            placedFootprints, tileCounts))
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    foreach (Direction direction in anchorDirections)
+                    {
+                        ResetTileTransform(location, tile, instance);
+
+                        if (alignOpenConnections &&
+                            !TryAlignToNeighbor(
+                                location, direction, instance, placedTiles))
+                        {
+                            continue;
+                        }
+
+                        if (TryAcceptTilePlacement(
+                                location, instance, tile, tileIndex,
+                                anchorDirections, placedTiles, placedTileIndices,
+                                placedFootprints, tileCounts))
+                        {
+                            return true;
+                        }
+
+                        if (!alignOpenConnections)
+                            break;
+                    }
                 }
 
                 DestroyGeneratedObject(instance);
-                return false;
             }
 
-            if (!alignOpenConnections)
+            return false;
+        }
+
+
+        private List<int> GetCandidateTileIndices(
+            GridLocation location,
+            Dictionary<GridLocation, int> placedTileIndices,
+            System.Random placementRandom,
+            bool allowDisconnectedPlacement)
+        {
+            List<int> candidates = new();
+
+            for (int index = 0; index < mapTiles.Count; index++)
             {
-                if (TryAcceptTilePlacement(
-                        location,
-                        instance,
-                        tile,
-                        placedTiles,
-                        placedFootprints,
-                        tileCounts))
+                if (FitsPlacedNeighbors(
+                        location, mapTiles.GetTile(index), placedTileIndices,
+                        allowDisconnectedPlacement))
                 {
-                    return true;
+                    candidates.Add(index);
+                }
+            }
+
+            List<int> ordered = new();
+            int preferred = GetCollapsedTileIndex(location);
+
+            if (candidates.Remove(preferred))
+                ordered.Add(preferred);
+
+            while (candidates.Count > 0)
+            {
+                float totalWeight = 0f;
+
+                foreach (int index in candidates)
+                    totalWeight += Mathf.Max(0f, mapTiles.GetTile(index).weight);
+
+                int selected = placementRandom.Next(candidates.Count);
+
+                if (totalWeight > 0f)
+                {
+                    double roll = placementRandom.NextDouble() * totalWeight;
+
+                    for (int i = 0; i < candidates.Count; i++)
+                    {
+                        roll -= Mathf.Max(0f,
+                            mapTiles.GetTile(candidates[i]).weight);
+
+                        if (roll <= 0d)
+                        {
+                            selected = i;
+                            break;
+                        }
+                    }
                 }
 
-                DestroyGeneratedObject(instance);
-                return false;
+                ordered.Add(candidates[selected]);
+                candidates.RemoveAt(selected);
             }
 
-            foreach (Direction direction in anchorDirections)
-            {
-                ResetTileTransform(location, tile, instance);
+            return ordered;
+        }
 
-                if (!TryAlignToNeighbor(
-                        location,
-                        direction,
-                        instance,
-                        placedTiles))
+
+        private bool FitsPlacedNeighbors(
+            GridLocation location,
+            MapTilesData.TileData tile,
+            Dictionary<GridLocation, int> placedTileIndices,
+            bool allowDisconnectedPlacement)
+        {
+            bool hasOpenNeighbor = false;
+            int tileId = int.Parse(tile.id);
+
+            foreach (Direction direction in GetPlacementDirections())
+            {
+                GridLocation neighborLocation = location.GetAdjacent(direction);
+
+                if (!placedTileIndices.TryGetValue(
+                        neighborLocation, out int neighborIndex))
                 {
                     continue;
                 }
 
-                if (TryAcceptTilePlacement(
-                        location,
-                        instance,
-                        tile,
-                        placedTiles,
-                        placedFootprints,
-                        tileCounts))
+                MapTilesData.TileData neighbor = mapTiles.GetTile(neighborIndex);
+                TileSocket socket = tile.GetSocket(direction);
+                TileSocket other = neighbor.GetSocket(
+                    DirectionUtility.Opposite(direction));
+                bool open = socket != null && socket.IsOpen;
+                bool otherOpen = other != null && other.IsOpen;
+
+                if (open != otherOpen)
+                    return false;
+
+                if (!open)
+                    continue;
+
+                if (!socket.Allows(int.Parse(neighbor.id)) ||
+                    !other.Allows(tileId))
                 {
-                    return true;
+                    return false;
                 }
+
+                hasOpenNeighbor = true;
             }
 
-            DestroyGeneratedObject(instance);
-            return false;
+            return allowDisconnectedPlacement || hasOpenNeighbor;
         }
 
 
@@ -422,7 +559,8 @@ namespace Assets.Scripts
 
         private Quaternion GetInitialRotation(MapTilesData.TileData tile)
         {
-            return Quaternion.Euler(tile.prefabRotation);
+            return tile.prefab.transform.rotation *
+                   Quaternion.Euler(tile.prefabRotation);
         }
 
 
@@ -430,10 +568,19 @@ namespace Assets.Scripts
             GridLocation location,
             GameObject instance,
             MapTilesData.TileData tile,
+            int tileIndex,
+            List<Direction> anchorDirections,
             Dictionary<GridLocation, GameObject> placedTiles,
+            Dictionary<GridLocation, int> placedTileIndices,
             List<Collider> placedFootprints,
             Dictionary<string, int> tileCounts)
         {
+            if (!ConnectionsAligned(
+                    location, instance, anchorDirections, placedTiles))
+            {
+                return false;
+            }
+
             if (preventFootprintOverlaps &&
                 HasBlockingFootprintOverlap(
                     location,
@@ -446,19 +593,39 @@ namespace Assets.Scripts
 
             AddFootprints(instance, placedFootprints);
             placedTiles[location] = instance;
+            placedTileIndices[location] = tileIndex;
 
             if (!tileCounts.ContainsKey(tile.id))
                 tileCounts[tile.id] = 0;
 
             tileCounts[tile.id]++;
 
-            if (alignOpenConnections)
+            return true;
+        }
+
+
+        private bool ConnectionsAligned(
+            GridLocation location,
+            GameObject instance,
+            List<Direction> anchorDirections,
+            Dictionary<GridLocation, GameObject> placedTiles)
+        {
+            foreach (Direction direction in anchorDirections)
             {
-                WarnAboutMisalignedConnections(
-                    location,
-                    instance,
-                    placedTiles
-                );
+                GridLocation neighborLocation = location.GetAdjacent(direction);
+                TileConnection current = GetConnection(instance, direction);
+                TileConnection neighbor = GetConnection(
+                    placedTiles[neighborLocation],
+                    DirectionUtility.Opposite(direction));
+
+                if (current == null || neighbor == null ||
+                    Vector3.Distance(
+                        current.transform.position,
+                        neighbor.transform.position) >
+                    maximumConnectionGap)
+                {
+                    return false;
+                }
             }
 
             return true;
@@ -467,7 +634,8 @@ namespace Assets.Scripts
 
         private List<Direction> GetPlacedOpenNeighborDirections(
             GridLocation location,
-            Dictionary<GridLocation, GameObject> placedTiles)
+            MapTilesData.TileData tile,
+            Dictionary<GridLocation, int> placedTileIndices)
         {
             List<Direction> directions = new();
 
@@ -476,11 +644,14 @@ namespace Assets.Scripts
                 GridLocation neighborLocation =
                     location.GetAdjacent(direction);
 
-                if (!placedTiles.ContainsKey(neighborLocation))
+                if (!placedTileIndices.TryGetValue(
+                        neighborLocation, out int neighborIndex) ||
+                    !tile.HasOpenSocket(direction) ||
+                    !mapTiles.GetTile(neighborIndex).HasOpenSocket(
+                        DirectionUtility.Opposite(direction)))
+                {
                     continue;
-
-                if (!HasOpenConnection(location, direction))
-                    continue;
+                }
 
                 directions.Add(direction);
             }
@@ -494,11 +665,15 @@ namespace Assets.Scripts
             Queue<GridLocation> placementQueue,
             HashSet<GridLocation> queuedLocations,
             Dictionary<GridLocation, GameObject> placedTiles,
+            Dictionary<GridLocation, int> placedTileIndices,
             HashSet<GridLocation> blockedLocations)
         {
+            MapTilesData.TileData tile = mapTiles.GetTile(
+                placedTileIndices[location]);
+
             foreach (Direction direction in GetPlacementDirections())
             {
-                if (!HasOpenConnection(location, direction))
+                if (!tile.HasOpenSocket(direction))
                     continue;
 
                 GridLocation neighborLocation =
@@ -523,36 +698,6 @@ namespace Assets.Scripts
             yield return Direction.South;
             yield return Direction.East;
             yield return Direction.North;
-        }
-
-
-        private bool HasOpenConnection(
-            GridLocation location,
-            Direction direction)
-        {
-            GridLocation neighborLocation =
-                location.GetAdjacent(direction);
-
-            if (!generatedGrid.IsInside(neighborLocation))
-                return false;
-
-            int tileIndex = GetCollapsedTileIndex(location);
-            int neighborTileIndex =
-                GetCollapsedTileIndex(neighborLocation);
-
-            if (tileIndex < 0 || neighborTileIndex < 0)
-                return false;
-
-            MapTilesData.TileData tile =
-                mapTiles.GetTile(tileIndex);
-
-            MapTilesData.TileData neighborTile =
-                mapTiles.GetTile(neighborTileIndex);
-
-            return tile.HasOpenSocket(direction) &&
-                   neighborTile.HasOpenSocket(
-                       DirectionUtility.Opposite(direction)
-                   );
         }
 
 
@@ -608,57 +753,6 @@ namespace Assets.Scripts
                 - newConnection.transform.position;
 
             return true;
-        }
-
-
-        private void WarnAboutMisalignedConnections(
-            GridLocation location,
-            GameObject instance,
-            Dictionary<GridLocation, GameObject> placedTiles)
-        {
-            foreach (Direction direction in GetPlacementDirections())
-            {
-                if (!HasOpenConnection(location, direction))
-                    continue;
-
-                GridLocation neighborLocation =
-                    location.GetAdjacent(direction);
-
-                if (!placedTiles.TryGetValue(
-                        neighborLocation,
-                        out GameObject neighbor))
-                {
-                    continue;
-                }
-
-                TileConnection currentConnection =
-                    GetConnection(instance, direction);
-
-                TileConnection neighborConnection =
-                    GetConnection(
-                        neighbor,
-                        DirectionUtility.Opposite(direction)
-                    );
-
-                if (currentConnection == null ||
-                    neighborConnection == null)
-                {
-                    continue;
-                }
-
-                float distance = Vector3.Distance(
-                    currentConnection.transform.position,
-                    neighborConnection.transform.position
-                );
-
-                if (distance <= connectionAlignmentWarningDistance)
-                    continue;
-
-                Debug.LogWarning(
-                    $"Open connection between {location} and " +
-                    $"{neighborLocation} is {distance:0.###} units apart."
-                );
-            }
         }
 
 
