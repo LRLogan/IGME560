@@ -275,8 +275,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bc6636bb01d070468a36e0682a37620, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Assets.Scripts.GenerateDungeon
-  width: 15
-  height: 15
+  width: 20
+  height: 20
   tileSize: 20
   mapTiles: {fileID: 11400000, guid: 4fa5a6bd4ca9c1c40b35a2142057dd83, type: 2}
   alignOpenConnections: 1
